@@ -48,7 +48,25 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
    ```
 2. **Install the board package**: `Tools > Board > Boards Manager`, search "esp32", install **esp32 by Espressif Systems** (2.0.14+ or the 3.x line — earlier versions don't support the C6).
 3. **Select the board**: `Tools > Board > esp32 > ESP32C6 Dev Module`.
-4. **Install libraries** via `Sketch > Include Library > Manage Libraries`:
+4. **Confirmed-working Tools menu settings** for this SuperMini clone board (Arduino IDE 2.3.10, `esp32` board package), if your upload fails or behaves oddly with the defaults:
+
+   | Setting | Value |
+   |---|---|
+   | Board | ESP32C6 Dev Module |
+   | USB CDC On Boot | Enabled |
+   | CPU Frequency | 160MHz (WiFi) |
+   | Core Debug Level | None |
+   | Erase All Flash Before Sketch Upload | Disabled |
+   | Flash Frequency | 80MHz |
+   | Flash Mode | QIO |
+   | Flash Size | 4MB (32Mb) |
+   | JTAG Adapter | Disabled |
+   | Partition Scheme | Default 4MB with spiffs (1.2MB APP/1.5MB SPIFFS) |
+   | Upload Speed | 921600 |
+   | Zigbee Mode | Disabled |
+
+   (Port will be whatever your OS assigns the board — e.g. `/dev/cu.usbmodem*` on macOS, `COM*` on Windows.)
+5. **Install libraries** via `Sketch > Include Library > Manage Libraries`:
    - Adafruit AHTX0
    - Adafruit BMP280 Library
    - Adafruit SH110X
