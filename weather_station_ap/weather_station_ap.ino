@@ -19,6 +19,16 @@
 //   2. On your phone/laptop, connect to the WiFi network AP_SSID below.
 //   3. Open a browser to http://192.168.4.1 (also shown on the OLED and Serial).
 //   4. The page updates every 2 seconds on its own — no need to refresh.
+//
+// IMPORTANT implementation note: this sketch deliberately avoids the Arduino
+// String class for anything drawn to the OLED. WiFi + WebServer together use a
+// large chunk of heap, and Arduino's String class can silently fail (producing
+// an empty string, no error) when a heap allocation doesn't succeed under that
+// pressure. That was the actual cause of a real bug here: drawBitmap/drawLine
+// write directly into a pre-allocated framebuffer (no allocation, never fails),
+// while every text string was being built with String concatenation — so text
+// silently vanished while graphics kept working. Fixed-size char buffers with
+// snprintf() never allocate, so they can't fail that way.
 
 #include <WiFi.h>
 #include <WebServer.h>
@@ -47,9 +57,9 @@ WebServer server(80);
 
 bool ahtOK = false, bmpOK = false, oledOK = false;
 float g_temperature = NAN, g_humidity = NAN, g_pressure = NAN;
+char g_ipStr[24] = "0.0.0.0";  // filled in setup() once the AP is up
 
-// The dashboard page. %PLACEHOLDER% values are filled in by handleRoot() below.
-// Auto-refreshes its numbers every 2s via fetch() to /data — no full page reload.
+// The dashboard page. Auto-refreshes its numbers every 2s via fetch() to /data — no full page reload.
 const char PAGE_TEMPLATE[] PROGMEM = R"HTML(
 <!DOCTYPE html>
 <html>
@@ -100,12 +110,26 @@ void handleRoot() {
 }
 
 void handleData() {
-  String json = "{";
-  json += "\"temp\":\"" + (ahtOK ? String(g_temperature, 1) + " &deg;C" : String("n/a")) + "\",";
-  json += "\"hum\":\""  + (ahtOK ? String(g_humidity, 1) + " %" : String("n/a")) + "\",";
-  json += "\"pres\":\"" + (bmpOK ? String(g_pressure, 0) + " hPa" : String("n/a")) + "\"";
-  json += "}";
+  char temp[16], hum[16], pres[16];
+  if (ahtOK) snprintf(temp, sizeof(temp), "%.1f &deg;C", g_temperature); else snprintf(temp, sizeof(temp), "n/a");
+  if (ahtOK) snprintf(hum,  sizeof(hum),  "%.1f %%",     g_humidity);    else snprintf(hum,  sizeof(hum),  "n/a");
+  if (bmpOK) snprintf(pres, sizeof(pres), "%.0f hPa",    g_pressure);    else snprintf(pres, sizeof(pres), "n/a");
+
+  char json[128];
+  snprintf(json, sizeof(json), "{\"temp\":\"%s\",\"hum\":\"%s\",\"pres\":\"%s\"}", temp, hum, pres);
   server.send(200, "application/json", json);
+}
+
+// Draws `text` horizontally centered on the display at the given y, for the given text size.
+// Takes a plain C-string (not Arduino String) — see the note at the top of this file for why.
+void centerText(const char* text, int y, int textSize) {
+  display.setTextSize(textSize);
+  int len = strlen(text);
+  int textWidthPx = len * 6 * textSize;
+  int x = (SCREEN_WIDTH - textWidthPx) / 2;
+  if (x < 0) x = 0;
+  display.setCursor(x, y);
+  display.print(text);
 }
 
 void setup() {
@@ -128,9 +152,10 @@ void setup() {
   // Start the Access Point.
   WiFi.softAP(AP_SSID, AP_PASSWORD);
   IPAddress ip = WiFi.softAPIP();
+  snprintf(g_ipStr, sizeof(g_ipStr), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
   Serial.println("--- WiFi Access Point ---");
   Serial.print("SSID: "); Serial.println(AP_SSID);
-  Serial.print("URL:  http://"); Serial.println(ip);
+  Serial.print("URL:  http://"); Serial.println(g_ipStr);
 
   server.on("/", handleRoot);
   server.on("/data", handleData);
@@ -145,11 +170,14 @@ void setup() {
     delay(2000);
 
     // Show the WiFi connection details so a beginner knows how to reach the dashboard.
+    char urlLine[32];
+    snprintf(urlLine, sizeof(urlLine), "http://%s", g_ipStr);
+
     display.clearDisplay();
     centerText("Connect to WiFi:", 4, 1);
     centerText(AP_SSID, 16, 1);
     centerText("then open:", 32, 1);
-    centerText("http://" + ip.toString(), 44, 1);
+    centerText(urlLine, 44, 1);
     display.display();
     delay(4000);
   }
@@ -181,12 +209,15 @@ void loop() {
     if (bmpOK) Serial.printf("%6.1f hPa\n", g_pressure); else Serial.println("  n/a");
 
     if (oledOK) {
+      char tempStr[12], humStr[12], presStr[12];
+      if (ahtOK) snprintf(tempStr, sizeof(tempStr), "%.1fC", g_temperature); else snprintf(tempStr, sizeof(tempStr), "n/a");
+      if (ahtOK) snprintf(humStr,  sizeof(humStr),  "%.0f",  g_humidity);    else snprintf(humStr,  sizeof(humStr),  "--");
+      if (bmpOK) snprintf(presStr, sizeof(presStr), "%.0f",  g_pressure);   else snprintf(presStr, sizeof(presStr), "--");
+
       display.clearDisplay();
       centerText("ElTech-Online", 0, 1);
       display.drawLine(0, 9, SCREEN_WIDTH, 9, SH110X_WHITE);
 
-      display.setTextSize(3);
-      String tempStr = ahtOK ? String(g_temperature, 1) + "C" : "n/a";
       centerText(tempStr, 16, 3);
 
       display.drawLine(0, 45, SCREEN_WIDTH, 45, SH110X_WHITE);
@@ -194,29 +225,15 @@ void loop() {
       display.setTextSize(1);
       display.setCursor(4, 52);
       display.print("Hum ");
-      display.print(ahtOK ? String(g_humidity, 0) : "--");
+      display.print(humStr);
       display.print("%");
 
       display.setCursor(70, 52);
       display.print("P ");
-      display.print(bmpOK ? String(g_pressure, 0) : "--");
+      display.print(presStr);
       display.print("hPa");
 
       display.display();
     }
   }
-}
-
-// Draws `text` horizontally centered on the display at the given y, for the given text size.
-// Draws `text` horizontally centered on the display at the given y, for the given text size.
-// Uses a fixed 6px-per-character advance (the default GFX font's width at size 1) rather than
-// getTextBounds() — that call returned inconsistent widths across Adafruit_GFX library versions
-// and pushed text off-screen (the bug behind "only the logo/lines show, no text").
-void centerText(const String& text, int y, int textSize) {
-  display.setTextSize(textSize);
-  int textWidthPx = text.length() * 6 * textSize;
-  int x = (SCREEN_WIDTH - textWidthPx) / 2;
-  if (x < 0) x = 0;
-  display.setCursor(x, y);
-  display.print(text);
 }
