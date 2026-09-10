@@ -132,10 +132,9 @@ void loop() {
 }
 
 // Draws `text` horizontally centered on the display at the given y, for the given text size.
-// Draws `text` horizontally centered on the display at the given y, for the given text size.
 // Uses a fixed 6px-per-character advance (the default GFX font's width at size 1) rather than
 // getTextBounds() — that call returned inconsistent widths across Adafruit_GFX library versions
-// and pushed text off-screen (the bug behind "only the logo/lines show, no text").
+// and pushed text off-screen.
 void centerText(const String& text, int y, int textSize) {
   display.setTextSize(textSize);
   int textWidthPx = text.length() * 6 * textSize;
