@@ -140,6 +140,13 @@ void setup() {
   ahtOK  = aht.begin();
   bmpOK  = bmp.begin(BMP280_ADDR);
 
+  // Without this, the driver's default text color doesn't exactly match any of
+  // its defined color constants, so every text pixel write silently no-ops —
+  // this was the actual bug behind "logo/lines show, no text ever appears".
+  if (oledOK) {
+    display.setTextColor(SH110X_WHITE);
+  }
+
   Serial.println("========================================");
   Serial.println("           ElTech-Online");
   Serial.println("   ESP32 Weather Station (WiFi AP mode)");
