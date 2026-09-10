@@ -11,6 +11,13 @@ Firmware for a small beginner-friendly weather station built from an **ESP32-C6 
 - Mirrors every reading to Serial (115200 baud) each cycle
 - Prints a self-test line on boot (`OLED: OK/NOT FOUND`, `AHT20: OK/NOT FOUND`, `BMP280: OK/NOT FOUND`) — this is the actual bench-test procedure used before dispatch, and it doubles as your first confirmation that everything is wired correctly
 
+There are **two sketches** in this repo:
+
+| Sketch | What it adds |
+|---|---|
+| `weather_station/` | The basic version above — OLED + Serial only. |
+| `weather_station_ap/` | Same sensor/OLED behaviour, **plus** the board starts its own WiFi network (an Access Point — no router needed) and serves a live-updating webpage with the readings. Connect any phone or laptop to the network it creates and browse to the address it shows on the OLED. |
+
 ## Hardware
 
 | Component | Notes |
@@ -47,7 +54,18 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
    - Adafruit SH110X
    - Adafruit GFX Library
 5. If you're unsure of your I2C pins/addresses, flash `i2c_scanner/i2c_scanner.ino` first and check Serial Monitor (115200 baud).
-6. Open `weather_station/weather_station.ino`, adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
+6. Open `weather_station/weather_station.ino` (or `weather_station_ap/weather_station_ap.ino` for the WiFi version), adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
+
+## WiFi dashboard (`weather_station_ap`)
+
+This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built into the ESP32 board package.
+
+1. Open `weather_station_ap/weather_station_ap.ino`. Change `AP_SSID` / `AP_PASSWORD` near the top if you want a different network name/password (password must be 8+ characters, or leave it `""` for an open network).
+2. Upload it. The OLED and Serial Monitor will show the network name and a URL like `http://192.168.4.1`.
+3. On your phone or laptop, connect to that WiFi network, then open that URL in a browser.
+4. The page shows temperature/humidity/pressure and updates itself every 2 seconds — no need to refresh.
+
+This is a standalone Access Point, not connected to your home WiFi/the internet — it's meant for a local demo (e.g. showing the kit working at a table, or on a shared network with no internet needed). Range is the same as any small WiFi device, roughly a typical room.
 
 ## Using your own logo instead
 
