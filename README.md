@@ -71,8 +71,8 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
    - Adafruit BMP280 Library
    - Adafruit SH110X
    - Adafruit GFX Library
-5. If you're unsure of your I2C pins/addresses, flash `i2c_scanner/i2c_scanner.ino` first and check Serial Monitor (115200 baud).
-6. Open `weather_station/weather_station.ino` (or `weather_station_ap/weather_station_ap.ino` for the WiFi version), adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
+6. If you're unsure of your I2C pins/addresses, flash `i2c_scanner/i2c_scanner.ino` first and check Serial Monitor (115200 baud).
+7. Open `weather_station/weather_station.ino` (or `weather_station_ap/weather_station_ap.ino` for the WiFi version), adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
 
 ## WiFi dashboard (`weather_station_ap`)
 
@@ -87,13 +87,13 @@ This is a standalone Access Point, not connected to your home WiFi/the internet 
 
 ## Using your own logo instead
 
-`weather_station/logo_bitmap.h` contains the ElTech-Online shop logo as a 48×32 monochrome bitmap. To swap in your own:
+Both `weather_station/logo_bitmap.h` and `weather_station_ap/logo_bitmap.h` contain the ElTech-Online shop logo as a 48×32 monochrome bitmap — they're separate copies (one per sketch folder, since Arduino sketches can't share files across folders), so **update both** if you swap the logo, or they'll drift out of sync with each other. To swap in your own:
 
 1. Crop your logo to just the icon (no fine text — anything under ~10px tall won't render legibly at this resolution)
 2. Convert it to a 1-bit bitmap sized to fit within 48×32 (any tool that exports an [Adafruit GFX-style `drawBitmap` byte array](https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts) works — e.g. [image2cpp](https://javl.github.io/image2cpp/))
-3. Replace the contents of `logo_bitmap.h` with your generated array, keeping the `LOGO_WIDTH`/`LOGO_HEIGHT` defines in sync
+3. Replace the contents of both `logo_bitmap.h` files with your generated array, keeping the `LOGO_WIDTH`/`LOGO_HEIGHT` defines in sync
 
-Or just delete the `drawBitmap(...)` line in `setup()` and keep the text-only splash.
+Or just delete the `drawBitmap(...)` line in `setup()` (in both sketches) and keep the text-only splash.
 
 ## License
 
