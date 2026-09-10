@@ -1,0 +1,64 @@
+# ElTech-Online ESP32-C6 Weather Station
+
+Firmware for a small beginner-friendly weather station built from an **ESP32-C6 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display — the same firmware that ships pre-flashed on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit.
+
+![ElTech-Online logo](logo_preview.png)
+
+## What it does
+
+- Reads temperature, humidity (AHT20) and barometric pressure (BMP280) over I2C
+- Shows a boot splash (shop logo + name) for 2 seconds, then a live readout: a large centered temperature as the headline reading, with humidity and pressure as smaller stats underneath
+- Mirrors every reading to Serial (115200 baud) each cycle
+- Prints a self-test line on boot (`OLED: OK/NOT FOUND`, `AHT20: OK/NOT FOUND`, `BMP280: OK/NOT FOUND`) — this is the actual bench-test procedure used before dispatch, and it doubles as your first confirmation that everything is wired correctly
+
+## Hardware
+
+| Component | Notes |
+|---|---|
+| ESP32-C6 SuperMini (or any ESP32-C6 dev board) | Needs WiFi 6 support — **not** the ESP32-H2 variant, which has no WiFi radio |
+| AHT20+BMP280 combo sensor | I2C, address `0x38` (AHT20) / `0x77` (BMP280) — confirm yours with the included scanner, some modules ship at `0x76` |
+| 1.3" OLED, SH1106 driver, 128×64, I2C | Address `0x3C` (try `0x3D` if blank) |
+| Breadboard + jumper wires | Both sensor and display share one I2C bus — 4 wires to each (VCC, GND, SDA, SCL) |
+
+## Wiring
+
+All three devices share one I2C bus — wire SDA together and SCL together (this is normal for I2C, each device has its own address):
+
+| Signal | ESP32-C6 | AHT20+BMP280 | OLED |
+|---|---|---|---|
+| 3.3V | 3V3 | VCC | VCC |
+| GND | GND | GND | GND |
+| SDA | GPIO 6 | SDA | SDA |
+| SCL | GPIO 7 | SCL | SCL |
+
+**Pin numbers vary between SuperMini clone boards.** If your board doesn't respond on GPIO 6/7, use `i2c_scanner/i2c_scanner.ino` first — it sweeps several candidate pin pairs and reports which one finds your devices.
+
+## Setup (Arduino IDE)
+
+1. **Add the ESP32 board index**: `File > Preferences` → Additional Boards Manager URLs:
+   ```
+   https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+   ```
+2. **Install the board package**: `Tools > Board > Boards Manager`, search "esp32", install **esp32 by Espressif Systems** (2.0.14+ or the 3.x line — earlier versions don't support the C6).
+3. **Select the board**: `Tools > Board > esp32 > ESP32C6 Dev Module`.
+4. **Install libraries** via `Sketch > Include Library > Manage Libraries`:
+   - Adafruit AHTX0
+   - Adafruit BMP280 Library
+   - Adafruit SH110X
+   - Adafruit GFX Library
+5. If you're unsure of your I2C pins/addresses, flash `i2c_scanner/i2c_scanner.ino` first and check Serial Monitor (115200 baud).
+6. Open `weather_station/weather_station.ino`, adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
+
+## Using your own logo instead
+
+`weather_station/logo_bitmap.h` contains the ElTech-Online shop logo as a 48×32 monochrome bitmap. To swap in your own:
+
+1. Crop your logo to just the icon (no fine text — anything under ~10px tall won't render legibly at this resolution)
+2. Convert it to a 1-bit bitmap sized to fit within 48×32 (any tool that exports an [Adafruit GFX-style `drawBitmap` byte array](https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts) works — e.g. [image2cpp](https://javl.github.io/image2cpp/))
+3. Replace the contents of `logo_bitmap.h` with your generated array, keeping the `LOGO_WIDTH`/`LOGO_HEIGHT` defines in sync
+
+Or just delete the `drawBitmap(...)` line in `setup()` and keep the text-only splash.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Use it, modify it, build your own kit with it.
