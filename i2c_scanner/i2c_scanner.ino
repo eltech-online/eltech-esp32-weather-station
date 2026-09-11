@@ -1,4 +1,4 @@
-// I2C scanner for the ESP32-C6 SuperMini — run this FIRST to find the real
+// I2C scanner for the ESP32-C3 SuperMini — run this FIRST to find the real
 // SDA/SCL pins and confirm both the AHT20+BMP280 and the OLED respond.
 //
 // How to use:
@@ -13,13 +13,13 @@
 
 #include <Wire.h>
 
-// Common candidate pin pairs to try on an ESP32-C6 SuperMini clone.
+// Common candidate pin pairs to try on an ESP32-C3 SuperMini clone.
 // {SDA, SCL}
 const int PIN_SETS[][2] = {
-  {6, 7},    // Espressif's own default C6 I2C pins
+  {8, 9},    // the C3 SuperMini's own labeled I2C pins
+  {6, 7},    // used during this project's earlier ESP32-C6 build
   {4, 5},
   {2, 3},
-  {8, 9},
   {18, 19},
   {22, 23},
 };

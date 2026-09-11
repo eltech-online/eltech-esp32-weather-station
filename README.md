@@ -1,6 +1,6 @@
 # ElTech-Online ESP32-C3 Weather Station
 
-Firmware for a small beginner-friendly weather station built from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display — the same firmware that ships pre-flashed on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit.
+Firmware for a small beginner-friendly weather station built from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display — the firmware planned to ship pre-flashed on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit (not yet listed).
 
 ![ElTech-Online logo](logo.png)
 
@@ -9,7 +9,7 @@ Firmware for a small beginner-friendly weather station built from an **ESP32-C3 
 - Reads temperature, humidity (AHT20) and barometric pressure (BMP280) over I2C
 - Shows a boot splash (shop logo + name) for 2 seconds, then a live readout: a large centered temperature as the headline reading, with humidity and pressure as smaller stats underneath
 - Mirrors every reading to Serial (115200 baud) each cycle
-- Prints a self-test line on boot (`OLED: OK/NOT FOUND`, `AHT20: OK/NOT FOUND`, `BMP280: OK/NOT FOUND`) — this is the actual bench-test procedure used before dispatch, and it doubles as your first confirmation that everything is wired correctly
+- Prints a self-test line on boot (`OLED (SH1106): OK/NOT FOUND`, `AHT20: OK/NOT FOUND`, `BMP280: OK/NOT FOUND`) — this is the actual bench-test procedure used before dispatch, and it doubles as your first confirmation that everything is wired correctly
 
 There are **two sketches** in this repo:
 
@@ -25,7 +25,7 @@ There are **two sketches** in this repo:
 | ESP32-C3 SuperMini (or any ESP32-C3 dev board) | Needs WiFi support for the `weather_station_ap` sketch's Access Point + web dashboard |
 | AHT20+BMP280 combo sensor | I2C, address `0x38` (AHT20) / `0x77` (BMP280) — confirm yours with the included scanner, some modules ship at `0x76` |
 | 1.3" OLED, SH1106 driver, 128×64, I2C | Address `0x3C` (try `0x3D` if blank) |
-| Breadboard + jumper wires | Both sensor and display share one I2C bus — 4 wires to each (VCC, GND, SDA, SCL) |
+| Breadboard + jumper wires | Both sensor and display share one I2C bus — 4 wires to each (VDD, GND, SDA, SCL) |
 
 ## Wiring
 
@@ -33,10 +33,10 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 
 | Signal | ESP32-C3 | AHT20+BMP280 | OLED |
 |---|---|---|---|
-| 3.3V | 3V3 | VCC | VCC |
+| 3.3V | 3V3 | VDD | VDD |
 | GND | GND | GND | GND |
 | SDA | GPIO 8 | SDA | SDA |
-| SCL | GPIO 9 | SCL | SCL |
+| SCL | GPIO 9 | SCL | SCK |
 
 **Pin numbers vary between SuperMini clone boards.** If your board doesn't respond on GPIO 8/9, use `i2c_scanner/i2c_scanner.ino` first — it sweeps several candidate pin pairs and reports which one finds your devices.
 
