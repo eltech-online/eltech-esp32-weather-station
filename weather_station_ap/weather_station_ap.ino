@@ -162,7 +162,7 @@ void loop() {
 
     if (oledOK) {
       display.clearDisplay();
-      centerText("ElTech-Online", 0, 1);
+      centerText("Weather Station", 0, 1);
       display.drawLine(0, 9, SCREEN_WIDTH, 9, SH110X_WHITE);
 
       display.setTextSize(3);
