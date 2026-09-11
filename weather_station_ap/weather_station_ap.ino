@@ -121,6 +121,10 @@ const char PAGE_TEMPLATE[] PROGMEM = R"HTML(
 )HTML";
 
 void handleRoot() {
+  // No-cache headers: the ESP32's own IP (192.168.4.1) is reused across every
+  // flash of this sketch, so a browser that visited an earlier/buggy version of
+  // this page can otherwise keep showing it from cache after a normal reload.
+  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   server.send(200, "text/html", PAGE_TEMPLATE);
 }
 
@@ -130,6 +134,7 @@ void handleData() {
   json += "\"hum\":\""  + (ahtOK ? String(g_humidity, 1) + " %" : String("n/a")) + "\",";
   json += "\"pres\":\"" + (bmpOK ? String(g_pressure, 0) + " hPa" : String("n/a")) + "\"";
   json += "}";
+  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   server.send(200, "application/json", json);
 }
 
