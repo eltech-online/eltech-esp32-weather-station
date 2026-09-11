@@ -33,6 +33,11 @@ Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 bool ahtOK = false, bmpOK = false, oledOK = false;
 
+// Explicit forward declaration — kept in sync with weather_station_ap.ino, which
+// needs this because a large raw-string literal there can confuse Arduino's
+// auto-prototype scanner.
+void centerText(const String& text, int y, int textSize);
+
 void setup() {
   Serial.begin(115200);
   Wire.begin(I2C_SDA, I2C_SCL);
