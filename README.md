@@ -1,6 +1,6 @@
-# ElTech-Online ESP32-C6 Weather Station
+# ElTech-Online ESP32-C3 Weather Station
 
-Firmware for a small beginner-friendly weather station built from an **ESP32-C6 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display — the same firmware that ships pre-flashed on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit.
+Firmware for a small beginner-friendly weather station built from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display — the same firmware that ships pre-flashed on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit.
 
 ![ElTech-Online logo](logo.png)
 
@@ -22,7 +22,7 @@ There are **two sketches** in this repo:
 
 | Component | Notes |
 |---|---|
-| ESP32-C6 SuperMini (or any ESP32-C6 dev board) | Needs WiFi 6 support — **not** the ESP32-H2 variant, which has no WiFi radio |
+| ESP32-C3 SuperMini (or any ESP32-C3 dev board) | Needs WiFi support for the `weather_station_ap` sketch's Access Point + web dashboard |
 | AHT20+BMP280 combo sensor | I2C, address `0x38` (AHT20) / `0x77` (BMP280) — confirm yours with the included scanner, some modules ship at `0x76` |
 | 1.3" OLED, SH1106 driver, 128×64, I2C | Address `0x3C` (try `0x3D` if blank) |
 | Breadboard + jumper wires | Both sensor and display share one I2C bus — 4 wires to each (VCC, GND, SDA, SCL) |
@@ -31,7 +31,7 @@ There are **two sketches** in this repo:
 
 All three devices share one I2C bus — wire SDA together and SCL together (this is normal for I2C, each device has its own address):
 
-| Signal | ESP32-C6 | AHT20+BMP280 | OLED |
+| Signal | ESP32-C3 | AHT20+BMP280 | OLED |
 |---|---|---|---|
 | 3.3V | 3V3 | VCC | VCC |
 | GND | GND | GND | GND |
@@ -40,21 +40,25 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 
 **Pin numbers vary between SuperMini clone boards.** If your board doesn't respond on GPIO 6/7, use `i2c_scanner/i2c_scanner.ino` first — it sweeps several candidate pin pairs and reports which one finds your devices.
 
+> **Note:** GPIO 6/7 above were confirmed on ESP32-**C6** hardware before this project switched to the C3 SuperMini. They haven't been re-verified on real C3 boards yet — run `i2c_scanner.ino` on your C3 to confirm before trusting them, and this README/diagram will be updated once that's done.
+
+![Wiring diagram: ESP32-C3 SuperMini to AHT20+BMP280 sensor and OLED SH1106 display](wiring_diagram.png)
+
 ## Setup (Arduino IDE)
 
 1. **Add the ESP32 board index**: `File > Preferences` → Additional Boards Manager URLs:
    ```
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```
-2. **Install the board package**: `Tools > Board > Boards Manager`, search "esp32", install **esp32 by Espressif Systems** (2.0.14+ or the 3.x line — earlier versions don't support the C6).
-3. **Select the board**: `Tools > Board > esp32 > ESP32C6 Dev Module`.
-4. **Confirmed-working Tools menu settings** for this SuperMini clone board (Arduino IDE 2.3.10, `esp32` board package), if your upload fails or behaves oddly with the defaults:
+2. **Install the board package**: `Tools > Board > Boards Manager`, search "esp32", install **esp32 by Espressif Systems**.
+3. **Select the board**: `Tools > Board > esp32 > ESP32C3 Dev Module`.
+4. **Tools menu settings** below are carried over from this project's earlier ESP32-**C6** build and not yet re-confirmed on real C3 hardware — treat as a starting point, not a guarantee, until re-tested:
 
    | Setting | Value |
    |---|---|
-   | Board | ESP32C6 Dev Module |
+   | Board | ESP32C3 Dev Module |
    | USB CDC On Boot | Enabled |
-   | CPU Frequency | 160MHz (WiFi) |
+   | CPU Frequency | 160MHz |
    | Core Debug Level | None |
    | Erase All Flash Before Sketch Upload | Disabled |
    | Flash Frequency | 80MHz |
@@ -63,7 +67,6 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
    | JTAG Adapter | Disabled |
    | Partition Scheme | Default 4MB with spiffs (1.2MB APP/1.5MB SPIFFS) |
    | Upload Speed | 921600 |
-   | Zigbee Mode | Disabled |
 
    (Port will be whatever your OS assigns the board — e.g. `/dev/cu.usbmodem*` on macOS, `COM*` on Windows.)
 5. **Install libraries** via `Sketch > Include Library > Manage Libraries`:
