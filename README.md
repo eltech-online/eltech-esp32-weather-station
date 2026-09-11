@@ -82,7 +82,7 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built into the ESP32 board package.
 
 1. Open `weather_station_ap/weather_station_ap.ino`. Change `AP_SSID` / `AP_PASSWORD` near the top if you want a different network name/password (password must be 8+ characters, or leave it `""` for an open network).
-2. Upload it. The OLED and Serial Monitor will show the network name and a URL like `http://192.168.4.1`.
+2. Upload it. The OLED and Serial Monitor will show the network name, password, and a URL like `http://192.168.4.1`.
 3. On your phone or laptop, connect to that WiFi network, then open that URL in a browser.
 4. The page shows temperature/humidity/pressure and updates itself every 2 seconds — no need to refresh.
 

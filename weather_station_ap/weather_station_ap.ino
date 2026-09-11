@@ -105,8 +105,9 @@ void setup() {
   WiFi.softAP(AP_SSID, AP_PASSWORD);
   IPAddress ip = WiFi.softAPIP();
   Serial.println("--- WiFi Access Point ---");
-  Serial.print("SSID: "); Serial.println(AP_SSID);
-  Serial.print("URL:  http://"); Serial.println(ip);
+  Serial.print("SSID:     "); Serial.println(AP_SSID);
+  Serial.print("Password: "); Serial.println(strlen(AP_PASSWORD) ? AP_PASSWORD : "(open network)");
+  Serial.print("URL:      http://"); Serial.println(ip);
 
   server.on("/", handleRoot);
   server.on("/data", handleData);
@@ -120,14 +121,17 @@ void setup() {
     display.display();
     delay(2000);
 
-    // Show the WiFi connection details so a beginner knows how to reach the dashboard.
+    // Show the WiFi connection details so a beginner knows how to reach the
+    // dashboard — SSID and password both, since a beginner has no other way
+    // to learn the password once the unit is sealed in its enclosure.
     display.clearDisplay();
-    centerText("Connect to WiFi:", 4, 1);
-    centerText(AP_SSID, 16, 1);
-    centerText("then open:", 32, 1);
-    centerText("http://" + ip.toString(), 44, 1);
+    centerText("Connect to WiFi:", 0, 1);
+    centerText(AP_SSID, 12, 1);
+    centerText(strlen(AP_PASSWORD) ? "Pass: " + String(AP_PASSWORD) : "(open network)", 24, 1);
+    centerText("then open:", 36, 1);
+    centerText("http://" + ip.toString(), 48, 1);
     display.display();
-    delay(4000);
+    delay(6000);
   }
 }
 
