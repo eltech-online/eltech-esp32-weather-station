@@ -2,7 +2,7 @@
 
 Firmware for a small beginner-friendly weather station built from an **ESP32-C6 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display — the same firmware that ships pre-flashed on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit.
 
-![ElTech-Online logo](logo_preview.png)
+![ElTech-Online logo](logo.png)
 
 ## What it does
 
