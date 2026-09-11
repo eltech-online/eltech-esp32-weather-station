@@ -35,12 +35,12 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 |---|---|---|---|
 | 3.3V | 3V3 | VCC | VCC |
 | GND | GND | GND | GND |
-| SDA | GPIO 6 | SDA | SDA |
-| SCL | GPIO 7 | SCL | SCL |
+| SDA | GPIO 8 | SDA | SDA |
+| SCL | GPIO 9 | SCL | SCL |
 
-**Pin numbers vary between SuperMini clone boards.** If your board doesn't respond on GPIO 6/7, use `i2c_scanner/i2c_scanner.ino` first — it sweeps several candidate pin pairs and reports which one finds your devices.
+**Pin numbers vary between SuperMini clone boards.** If your board doesn't respond on GPIO 8/9, use `i2c_scanner/i2c_scanner.ino` first — it sweeps several candidate pin pairs and reports which one finds your devices.
 
-> **Note:** GPIO 6/7 above were confirmed on ESP32-**C6** hardware before this project switched to the C3 SuperMini. They haven't been re-verified on real C3 boards yet — run `i2c_scanner.ino` on your C3 to confirm before trusting them, and this README/diagram will be updated once that's done.
+> **Note:** GPIO 8/9 above are the ESP32-C3 SuperMini's own labeled I2C pins (see the wiring diagram). The firmware in this repo (`I2C_SDA`/`I2C_SCL` in both sketches) is **not updated yet** — it still has the values confirmed on the earlier ESP32-C6 build. It'll be updated to match once the C3 boards arrive and are bench-tested; until then, adjust `I2C_SDA`/`I2C_SCL` in the sketch to 8/9 yourself if you're wiring against this README.
 
 ![Wiring diagram: ESP32-C3 SuperMini to AHT20+BMP280 sensor and OLED SH1106 display](wiring_diagram.png)
 
