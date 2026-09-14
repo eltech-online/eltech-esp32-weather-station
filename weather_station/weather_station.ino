@@ -1,14 +1,14 @@
-// ESP32-C6 Weather Station Kit — pre-flashed demo sketch
-// AHT20+BMP280 (I2C) -> OLED SH1106 128x64 (I2C)
-// Flashed onto every kit before dispatch: doubles as the bench-test proof of "TESTED"
-// and as the buyer's out-of-the-box "it just works" demo.
+// ESP32-C3 Weather Station Kit — basic version (OLED + Serial, no WiFi)
+// Reads temperature/humidity/pressure from AHT20+BMP280 and shows them on an
+// OLED SH1106 128x64 display. Prints a self-test on boot so you can confirm
+// everything is wired correctly before writing any more code.
 //
 // Libraries needed (Arduino IDE Library Manager):
 //   Adafruit AHTX0
 //   Adafruit BMP280 Library
 //   Adafruit SH110X
 //   Adafruit GFX Library (dependency of the above two)
-// Board package: esp32 by Espressif Systems (select an ESP32-C6 board/DevKit)
+// Board package: esp32 by Espressif Systems — select "ESP32C3 Dev Module"
 
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
@@ -20,10 +20,11 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_ADDR    0x3C   // common default; try 0x3D if blank
-#define BMP280_ADDR  0x77   // confirmed via i2c_scanner.ino on real hardware, 2026-09-10
+#define BMP280_ADDR  0x77   // common default; some modules ship at 0x76
 
-// Confirmed via i2c_scanner.ino on real hardware, 2026-09-10 — AHT20 (0x38) and
-// BMP280 (0x77) both responded on this pin pair.
+// These pins were confirmed on an earlier ESP32-C6 build, not yet re-tested on
+// C3. If your sensors/display don't respond, run i2c_scanner.ino first to find
+// the right pins and addresses for your board, then update these.
 #define I2C_SDA 6
 #define I2C_SCL 7
 
@@ -33,9 +34,6 @@ Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 bool ahtOK = false, bmpOK = false, oledOK = false;
 
-// Explicit forward declaration — kept in sync with weather_station_ap.ino, which
-// needs this because a large raw-string literal there can confuse Arduino's
-// auto-prototype scanner.
 void centerText(const String& text, int y, int textSize);
 
 void setup() {
@@ -58,7 +56,7 @@ void setup() {
   Serial.println("       ESP32 Weather Station Kit");
   Serial.println("========================================");
 
-  // Serial self-check line — this is what you read during bench-test before dispatch.
+  // Self-test: check this in Serial Monitor to confirm everything is wired right.
   Serial.println("--- Self-test ---");
   Serial.print("OLED (SH1106): "); Serial.println(oledOK ? "OK" : "NOT FOUND");
   Serial.print("AHT20:         "); Serial.println(ahtOK  ? "OK" : "NOT FOUND");

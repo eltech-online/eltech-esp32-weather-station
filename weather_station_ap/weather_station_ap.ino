@@ -28,7 +28,8 @@
 #include <Adafruit_BMP280.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
-#include "logo_bitmap.h"
+#include "logo_bitmap.h"    // shop logo bitmap for the OLED splash screen
+#include "page_template.h"  // the web dashboard's HTML page (used by handleRoot() below)
 
 // ---- WiFi Access Point settings — change these if you like ----
 const char* AP_SSID     = "ElTech-WeatherStation";
@@ -36,8 +37,12 @@ const char* AP_PASSWORD = "weather123";   // must be 8+ characters, or "" for an
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_ADDR    0x3C
-#define BMP280_ADDR  0x77   // confirmed via i2c_scanner.ino on real hardware
+#define OLED_ADDR    0x3C   // common default; try 0x3D if blank
+#define BMP280_ADDR  0x77   // common default; some modules ship at 0x76
+
+// These pins were confirmed on an earlier ESP32-C6 build, not yet re-tested on
+// C3. If your sensors/display don't respond, run i2c_scanner.ino first to find
+// the right pins and addresses for your board, then update these.
 #define I2C_SDA 6
 #define I2C_SCL 7
 
@@ -48,19 +53,12 @@ WebServer server(80);
 
 bool ahtOK = false, bmpOK = false, oledOK = false;
 
-// Explicit forward declaration — Arduino's auto-prototype scanner can fail to find
-// this on its own when a large raw-string literal (the logo's base64 data) appears
-// earlier in the file, so don't rely on it being auto-generated.
 void centerText(const String& text, int y, int textSize);
 float g_temperature = NAN, g_humidity = NAN, g_pressure = NAN;
 
-#include "page_template.h"
-
-
 void handleRoot() {
-  // No-cache headers: the ESP32's own IP (192.168.4.1) is reused across every
-  // flash of this sketch, so a browser that visited an earlier/buggy version of
-  // this page can otherwise keep showing it from cache after a normal reload.
+  // No-cache headers: stops your browser reusing an old cached page after you
+  // reflash the sketch, since the ESP32 always serves from the same IP.
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   server.send(200, "text/html", PAGE_TEMPLATE);
 }

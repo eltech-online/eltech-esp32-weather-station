@@ -1,5 +1,13 @@
 // Auto-generated monochrome bitmap of the ElTech-Online shop logo icon
 // Source: eBay shop page logo (s-l140.webp), icon cropped from wordmark, thresholded to 1-bit
+//
+// Each byte below is 8 pixels, 1 bit per pixel (1 = lit, 0 = off) — this is the
+// format Adafruit_GFX's drawBitmap() expects. PROGMEM keeps the array in flash
+// instead of RAM, since it's only ever read, not written. See "Using your own
+// logo" in the README if you want to swap this for a different image.
+//
+// This is a separate copy from weather_station/logo_bitmap.h (Arduino sketches
+// can't share files across folders) — update both if you change the logo.
 #define LOGO_WIDTH  48
 #define LOGO_HEIGHT 32
 const unsigned char PROGMEM logo_bmp[] = {

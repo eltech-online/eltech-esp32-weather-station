@@ -1,8 +1,20 @@
 # ElTech-Online ESP32-C3 Weather Station
 
-Firmware for a small beginner-friendly weather station built from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display — the firmware planned to ship pre-flashed on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit (not yet listed).
+A beginner-friendly **learning kit**: build a real weather station from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display, while picking up the core skills behind almost any IoT project — wiring I2C sensors, flashing Arduino firmware, and hosting a live WiFi dashboard from the board itself. No prior electronics or coding experience needed. This firmware ships pre-flashed and pre-tested on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit (not yet listed) — but it's public so you can read it, learn from it, and build your own from scratch too.
 
 ![ElTech-Online logo](logo.png)
+
+## What you'll learn
+
+This kit is designed to teach, not just work out of the box:
+
+- **Wiring an I2C bus** — how two different sensors and a display can share the same two data wires (SDA/SCL), and how to find a device's address with a scanner sketch when you're not sure
+- **Flashing Arduino firmware** — installing a board package, picking the right board/Tools settings, and uploading code to real hardware
+- **Reading sensor data** — pulling temperature, humidity, and pressure off I2C sensors and showing it on a small OLED display
+- **Hosting your own WiFi dashboard** — turning the board into its own Access Point and serving a live-updating webpage, with no router or internet needed
+- **Verifying your own work** — the firmware prints a pass/fail self-test on boot, so you get immediate proof each part is wired correctly before moving on
+
+Every step is documented below, and the full source is here to read, copy, or modify.
 
 ## What it does
 

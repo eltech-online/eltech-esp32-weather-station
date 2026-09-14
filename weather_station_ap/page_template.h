@@ -1,7 +1,14 @@
 #pragma once
 
-// The dashboard page. %PLACEHOLDER% values are filled in by handleRoot() below.
-// Auto-refreshes its numbers every 2s via fetch() to /data — no full page reload.
+// The dashboard webpage, served as-is by handleRoot() — no server-side values
+// are inserted into it. Instead, its own JavaScript (bottom of this file) polls
+// the /data endpoint every 2 seconds and updates the numbers in the browser,
+// so the page never needs a full reload.
+//
+// R"HTML(...)HTML" is a C++ raw string literal: everything between the markers
+// is taken literally, including quotes and newlines, so the HTML/CSS/JS below
+// can be pasted in unescaped. PROGMEM keeps this (fairly large) string in flash
+// instead of RAM, since the ESP32 only ever reads it.
 const char PAGE_TEMPLATE[] PROGMEM = R"HTML(
 <!DOCTYPE html>
 <html>
