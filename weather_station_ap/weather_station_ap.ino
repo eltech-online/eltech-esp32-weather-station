@@ -74,6 +74,12 @@ const float PRES_MIN_HPA = 870.0, PRES_MAX_HPA = 1085.0;
 // Set by runSelfTest(): true only if the sensor was found AND its first
 // reading was inside the ranges above.
 bool ahtPassed = false, bmpPassed = false;
+bool selfTestPassed = false;
+
+// Each part's self-test result as text ("OK", "NOT FOUND", "BAD READING"),
+// plus the first reading it took — kept so the web dashboard can show them too.
+String ahtStatus = "NOT FOUND", bmpStatus = "NOT FOUND";
+String ahtDetail, bmpDetail;
 
 // The network name/password actually in use (from the settings above, or
 // generated), and whether the Access Point started.
@@ -94,12 +100,24 @@ void handleRoot() {
   server.send(200, "text/html", PAGE_TEMPLATE);
 }
 
+// One self-test row as a JSON array: ["name","status","detail"].
+String selfTestRow(const String& name, const String& status, const String& detail) {
+  return "[\"" + name + "\",\"" + status + "\",\"" + detail + "\"]";
+}
+
 void handleData() {
   String json = "{";
   json += "\"temp\":\"" + (ahtOK ? String(g_temperature, 1) + " °C" : String("n/a")) + "\",";
   json += "\"hum\":\""  + (ahtOK ? String(g_humidity, 1) + " %" : String("n/a")) + "\",";
-  json += "\"pres\":\"" + (bmpOK ? String(g_pressure, 0) + " hPa" : String("n/a")) + "\"";
-  json += "}";
+  json += "\"pres\":\"" + (bmpOK ? String(g_pressure, 0) + " hPa" : String("n/a")) + "\",";
+
+  // The power-on self-test results, so you can see them without Serial Monitor.
+  json += "\"selftest\":{\"result\":\"" + String(selfTestPassed ? "PASS" : "FAIL") + "\",\"parts\":[";
+  json += selfTestRow("OLED (SH1106)", oledOK ? "OK" : "NOT FOUND", "") + ",";
+  json += selfTestRow("AHT20", ahtStatus, ahtDetail) + ",";
+  json += selfTestRow("BMP280", bmpStatus, bmpDetail) + ",";
+  json += selfTestRow("WiFi AP", wifiOK ? "OK" : "FAILED", wifiOK ? "" : wifiError);
+  json += "]}}";
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   server.send(200, "application/json", json);
 }
@@ -194,7 +212,7 @@ void setup() {
   apUrl = "http://" + ip.toString();
 
   // Self-test: check this in Serial Monitor to confirm everything is wired right.
-  bool selfTestPassed = runSelfTest();
+  selfTestPassed = runSelfTest();
 
   Serial.println("--- WiFi Access Point ---");
   if (wifiOK) {
@@ -340,8 +358,11 @@ bool runSelfTest() {
     ahtPassed = readOK
              && inRange(temp.temperature, TEMP_MIN_C, TEMP_MAX_C)
              && inRange(humidity.relative_humidity, HUM_MIN_PCT, HUM_MAX_PCT);
+    ahtStatus = ahtPassed ? "OK" : "BAD READING";
+    ahtDetail = readOK ? String(temp.temperature, 1) + " °C, " + String(humidity.relative_humidity, 1) + " %"
+                       : String("no data");
     if (readOK) {
-      Serial.printf("%s (%.1f C, %.1f %%)\n", ahtPassed ? "OK" : "BAD READING",
+      Serial.printf("%s (%.1f C, %.1f %%)\n", ahtStatus.c_str(),
                     temp.temperature, humidity.relative_humidity);
     } else {
       Serial.println("BAD READING (no data)");
@@ -355,7 +376,9 @@ bool runSelfTest() {
     delay(100);  // give the BMP280 time to finish its first measurement after begin()
     float pressureHpa = bmp.readPressure() / 100.0F;
     bmpPassed = inRange(pressureHpa, PRES_MIN_HPA, PRES_MAX_HPA);
-    Serial.printf("%s (%.1f hPa)\n", bmpPassed ? "OK" : "BAD READING", pressureHpa);
+    bmpStatus = bmpPassed ? "OK" : "BAD READING";
+    bmpDetail = String(pressureHpa, 1) + " hPa";
+    Serial.printf("%s (%.1f hPa)\n", bmpStatus.c_str(), pressureHpa);
   }
 
   Serial.print("WiFi AP:       ");
