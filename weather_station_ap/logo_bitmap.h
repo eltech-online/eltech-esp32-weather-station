@@ -1,4 +1,5 @@
 // Auto-generated monochrome bitmap of the ElTech-Online shop logo icon
+// © ElTech-Online, all rights reserved — NOT covered by this repo's MIT license.
 // Source: eBay shop page logo (s-l140.webp), icon cropped from wordmark, thresholded to 1-bit
 //
 // Each byte below is 8 pixels, 1 bit per pixel (1 = lit, 0 = off) — this is the

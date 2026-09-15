@@ -1,23 +1,29 @@
-// I2C scanner for the ESP32-C3 SuperMini — run this FIRST to find the real
-// SDA/SCL pins and confirm both the AHT20+BMP280 and the OLED respond.
+// I2C scanner for the ESP32 weather station — run this FIRST to find the real
+// SDA/SCL pins and confirm the AHT20+BMP280 and the OLED all respond.
 //
 // How to use:
-//   1. Wire up ONE device at a time is easiest to interpret, but wiring both
-//      at once is fine too — just note that a working scan should report
-//      TWO addresses once both are connected (typically 0x38 for AHT20 and
-//      0x76 or 0x77 for BMP280, plus 0x3C or 0x3D for the OLED).
-//   2. Try each pin pair below in turn (edit PIN_SETS) — re-flash and re-open
-//      Serial Monitor at 115200 baud between attempts.
-//   3. Whichever pair reports device addresses is your real SDA/SCL — use
-//      those numbers in weather_station.ino's I2C_SDA / I2C_SCL defines.
+//   1. Wire up the sensor and the OLED (one device at a time is easiest to
+//      read, but both at once is fine). With everything connected, a working
+//      scan reports THREE addresses: 0x38 (AHT20), 0x76 or 0x77 (BMP280), and
+//      0x3C or 0x3D (OLED).
+//   2. Flash this sketch and open Serial Monitor at 115200 baud. It tries every
+//      pin pair in PIN_SETS automatically, one after another — no need to edit
+//      or re-flash between attempts. The scan runs once at boot, so if you
+//      opened Serial Monitor too late, press the board's RESET button.
+//   3. Whichever pair reports device addresses is your real SDA/SCL — put those
+//      numbers into I2C_SDA / I2C_SCL at the top of weather_station.ino (and
+//      weather_station_ap.ino, if you use the WiFi version), along with any
+//      addresses that differ from the defaults there.
 
 #include <Wire.h>
 
-// Common candidate pin pairs to try on an ESP32-C3 SuperMini clone.
-// {SDA, SCL}
+// Common candidate pin pairs to try. {SDA, SCL}
+// Not every pair exists on every board — remove any pair your chip doesn't have.
+// On an ESP32-C3, remove {18, 19} (those are the C3's USB pins — scanning them
+// cuts the Serial Monitor connection mid-scan) and {22, 23} (no such GPIOs).
 const int PIN_SETS[][2] = {
-  {8, 9},    // the C3 SuperMini's own labeled I2C pins
-  {6, 7},    // used during this project's earlier ESP32-C6 build
+  {8, 9},    // the ESP32-C3 SuperMini's own labeled I2C pins
+  {6, 7},    // the pins this project's ESP32-C6 test build uses
   {4, 5},
   {2, 3},
   {18, 19},

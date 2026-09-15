@@ -112,4 +112,6 @@ Or just delete the `drawBitmap(...)` line in `setup()` (in both sketches) and ke
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Use it, modify it, build your own kit with it.
+The code, documentation and wiring diagram are MIT-licensed — see [LICENSE](LICENSE). Use them, modify them, build your own kit with them.
+
+**The ElTech-Online name and logo are not covered by the MIT license.** The logo files (`logo.png`, `logo_preview.png`, and the bitmap in both `logo_bitmap.h` files) are © ElTech-Online, all rights reserved. If you build or sell your own version, swap in your own logo (see [Using your own logo instead](#using-your-own-logo-instead)) and don't present it as an ElTech-Online product.
