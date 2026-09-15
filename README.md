@@ -1,5 +1,7 @@
 # ElTech-Online ESP32-C3 Weather Station
 
+[![Compile sketches](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml/badge.svg)](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml)
+
 A beginner-friendly **learning kit**: build a real weather station from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display, while picking up the core skills behind almost any IoT project — wiring I2C sensors, flashing Arduino firmware, and hosting a live WiFi dashboard from the board itself. No prior electronics or coding experience needed. This firmware ships pre-flashed and pre-tested on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit (not yet listed) — but it's public so you can read it, learn from it, and build your own from scratch too.
 
 ![ElTech-Online logo](logo.png)
@@ -38,6 +40,8 @@ There are **two sketches** in this repo:
 | AHT20+BMP280 combo sensor | I2C, address `0x38` (AHT20) / `0x77` (BMP280) — confirm yours with the included scanner, some modules ship at `0x76` |
 | 1.3" OLED, SH1106 driver, 128×64, I2C | Address `0x3C` (try `0x3D` if blank) |
 | Breadboard + jumper wires | Both sensor and display share one I2C bus — 4 wires to each (VDD, GND, SDA, SCL) |
+
+> **Why the temperature reads a little warm:** the ESP32 gets warm while it runs — more so with WiFi on in the `weather_station_ap` sketch — and on a breadboard the sensor sits only a few centimetres away, so it picks up some of that heat. Expect the reading to be roughly 1–3 °C above the real room temperature (humidity reads slightly low for the same reason). That's normal, not a faulty sensor. For more accurate readings, move the sensor away from the board on longer jumper wires, ideally with it below or beside the board rather than above it (heat rises).
 
 ## Wiring
 

@@ -11,6 +11,8 @@
 //   Adafruit BMP280 Library
 //   Adafruit SH110X
 //   Adafruit GFX Library
+// (Library Manager also offers Adafruit BusIO and Adafruit Unified Sensor as
+// dependencies — click "Install all". Tested versions are listed in the README.)
 // (WiFi and WebServer are built into the ESP32 board package — no separate install)
 // Board package: esp32 by Espressif Systems
 //
@@ -163,7 +165,6 @@ void loop() {
       centerText("Weather Station", 0, 1);
       display.drawLine(0, 9, SCREEN_WIDTH, 9, SH110X_WHITE);
 
-      display.setTextSize(3);
       String tempStr = ahtOK ? String(g_temperature, 1) + "C" : "n/a";
       centerText(tempStr, 16, 3);
 

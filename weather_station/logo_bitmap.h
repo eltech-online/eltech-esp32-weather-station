@@ -3,8 +3,10 @@
 // Source: eBay shop page logo (s-l140.webp), icon cropped from wordmark, thresholded to 1-bit
 //
 // Each byte below is 8 pixels, 1 bit per pixel (1 = lit, 0 = off) — this is the
-// format Adafruit_GFX's drawBitmap() expects. PROGMEM keeps the array in flash
-// instead of RAM, since it's only ever read, not written. See "Using your own
+// format Adafruit_GFX's drawBitmap() expects. PROGMEM marks the array as
+// read-only data to keep in flash memory. On an ESP32 that already happens to
+// every `const` array automatically, so PROGMEM changes nothing here — it's kept
+// so the same code also works on boards like the Arduino Uno, where it matters. See "Using your own
 // logo" in the README if you want to swap this for a different image.
 #define LOGO_WIDTH  48
 #define LOGO_HEIGHT 32

@@ -7,8 +7,10 @@
 //
 // R"HTML(...)HTML" is a C++ raw string literal: everything between the markers
 // is taken literally, including quotes and newlines, so the HTML/CSS/JS below
-// can be pasted in unescaped. PROGMEM keeps this (fairly large) string in flash
-// instead of RAM, since the ESP32 only ever reads it.
+// can be pasted in unescaped. On an ESP32 a `const` string like this stays
+// in flash memory automatically (it's never copied into RAM), so PROGMEM changes
+// nothing here — it's kept so the code also works on boards like the Arduino
+// Uno, where it does matter.
 const char PAGE_TEMPLATE[] PROGMEM = R"HTML(
 <!DOCTYPE html>
 <html>

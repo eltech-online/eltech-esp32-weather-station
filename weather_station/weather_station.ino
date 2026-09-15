@@ -7,7 +7,9 @@
 //   Adafruit AHTX0
 //   Adafruit BMP280 Library
 //   Adafruit SH110X
-//   Adafruit GFX Library (dependency of the above two)
+//   Adafruit GFX Library
+// (Library Manager also offers Adafruit BusIO and Adafruit Unified Sensor as
+// dependencies — click "Install all". Tested versions are listed in the README.)
 // Board package: esp32 by Espressif Systems — select "ESP32C3 Dev Module"
 
 #include <Wire.h>
@@ -109,7 +111,6 @@ void loop() {
     display.drawLine(0, 9, SCREEN_WIDTH, 9, SH110X_WHITE);
 
     // Big centered temperature — the headline number.
-    display.setTextSize(3);
     String tempStr = ahtOK ? String(temperature, 1) + "C" : "n/a";
     centerText(tempStr, 16, 3);
 

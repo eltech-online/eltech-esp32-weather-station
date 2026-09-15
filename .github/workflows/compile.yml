@@ -1,0 +1,52 @@
+# Compiles every sketch for both boards on each push/PR, using the same board
+# package and library versions listed under "Tested with" in the README.
+# If you bump a version there, bump it here too.
+name: Compile sketches
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        board:
+          - fqbn: esp32:esp32:esp32c3:CDCOnBoot=cdc
+            name: ESP32-C3
+          - fqbn: esp32:esp32:esp32c6:CDCOnBoot=cdc
+            name: ESP32-C6
+    name: ${{ matrix.board.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/compile-sketches@v1
+        with:
+          fqbn: ${{ matrix.board.fqbn }}
+          platforms: |
+            - name: esp32:esp32
+              source-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+              version: 3.3.11
+          libraries: |
+            - name: Adafruit AHTX0
+              version: 2.0.6
+            - name: Adafruit BMP280 Library
+              version: 3.0.0
+            - name: Adafruit SH110X
+              version: 2.1.15
+            - name: Adafruit GFX Library
+              version: 1.12.6
+            - name: Adafruit BusIO
+              version: 1.17.4
+            - name: Adafruit Unified Sensor
+              version: 1.1.15
+          sketch-paths: |
+            - weather_station
+            - weather_station_ap
+            - i2c_scanner
+          cli-compile-flags: |
+            - --warnings
+            - all
+          enable-warnings-report: true
