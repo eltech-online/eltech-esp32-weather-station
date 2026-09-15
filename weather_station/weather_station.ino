@@ -36,7 +36,19 @@ Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 bool ahtOK = false, bmpOK = false, oledOK = false;
 
+// Self-test ranges. A reading outside these almost always means a faulty or
+// badly wired sensor rather than the real weather, so the self-test fails it.
+const float TEMP_MIN_C   = -20.0, TEMP_MAX_C   = 60.0;
+const float HUM_MIN_PCT  =   0.0, HUM_MAX_PCT  = 100.0;
+const float PRES_MIN_HPA = 870.0, PRES_MAX_HPA = 1085.0;
+
+// Set by runSelfTest(): true only if the sensor was found AND its first
+// reading was inside the ranges above.
+bool ahtPassed = false, bmpPassed = false;
+
 void centerText(const String& text, int y, int textSize);
+bool runSelfTest();
+void showSelfTestFailure();
 
 void setup() {
   Serial.begin(115200);
@@ -59,10 +71,7 @@ void setup() {
   Serial.println("========================================");
 
   // Self-test: check this in Serial Monitor to confirm everything is wired right.
-  Serial.println("--- Self-test ---");
-  Serial.print("OLED (SH1106): "); Serial.println(oledOK ? "OK" : "NOT FOUND");
-  Serial.print("AHT20:         "); Serial.println(ahtOK  ? "OK" : "NOT FOUND");
-  Serial.print("BMP280:        "); Serial.println(bmpOK  ? "OK" : "NOT FOUND");
+  bool selfTestPassed = runSelfTest();
 
   // OLED splash screen — shown for 2s before the sensor-reading loop starts.
   // Real shop logo (converted from the eBay shop icon) centered on top, with the
@@ -74,6 +83,8 @@ void setup() {
     centerText("Weather Station", 48, 1);
     display.display();
     delay(2000);
+
+    if (!selfTestPassed) showSelfTestFailure();
   }
 }
 
@@ -146,4 +157,68 @@ void centerText(const String& text, int y, int textSize) {
   if (x < 0) x = 0;
   display.setCursor(x, y);
   display.print(text);
+}
+
+bool inRange(float value, float minValue, float maxValue) {
+  return !isnan(value) && value >= minValue && value <= maxValue;
+}
+
+// Checks each part is connected AND gives a believable first reading, prints
+// the result to Serial, and returns true only if everything passed. A sensor
+// that answers but reads e.g. 0 hPa or NaN is reported as BAD READING.
+bool runSelfTest() {
+  Serial.println("--- Self-test ---");
+  Serial.print("OLED (SH1106): "); Serial.println(oledOK ? "OK" : "NOT FOUND");
+
+  Serial.print("AHT20:         ");
+  if (!ahtOK) {
+    Serial.println("NOT FOUND");
+  } else {
+    sensors_event_t humidity, temp;
+    bool readOK = aht.getEvent(&humidity, &temp);
+    ahtPassed = readOK
+             && inRange(temp.temperature, TEMP_MIN_C, TEMP_MAX_C)
+             && inRange(humidity.relative_humidity, HUM_MIN_PCT, HUM_MAX_PCT);
+    if (readOK) {
+      Serial.printf("%s (%.1f C, %.1f %%)\n", ahtPassed ? "OK" : "BAD READING",
+                    temp.temperature, humidity.relative_humidity);
+    } else {
+      Serial.println("BAD READING (no data)");
+    }
+  }
+
+  Serial.print("BMP280:        ");
+  if (!bmpOK) {
+    Serial.println("NOT FOUND");
+  } else {
+    delay(100);  // give the BMP280 time to finish its first measurement after begin()
+    float pressureHpa = bmp.readPressure() / 100.0F;
+    bmpPassed = inRange(pressureHpa, PRES_MIN_HPA, PRES_MAX_HPA);
+    Serial.printf("%s (%.1f hPa)\n", bmpPassed ? "OK" : "BAD READING", pressureHpa);
+  }
+
+  bool passed = oledOK && ahtPassed && bmpPassed;
+  Serial.print("RESULT:        "); Serial.println(passed ? "PASS" : "FAIL");
+  return passed;
+}
+
+// Shown on the OLED only when the self-test fails, so a problem is visible even
+// without a computer attached. (If the OLED itself failed, only Serial shows it.)
+void showSelfTestFailure() {
+  display.clearDisplay();
+  centerText("SELF-TEST FAILED", 0, 1);
+  display.drawLine(0, 9, SCREEN_WIDTH, 9, SH110X_WHITE);
+  int y = 14;
+  if (!ahtPassed) {
+    display.setCursor(0, y); y += 10;
+    display.print(ahtOK ? "AHT20: bad reading" : "AHT20: not found");
+  }
+  if (!bmpPassed) {
+    display.setCursor(0, y); y += 10;
+    display.print(bmpOK ? "BMP280: bad reading" : "BMP280: not found");
+  }
+  display.setCursor(0, 54);
+  display.print("See Serial Monitor");
+  display.display();
+  delay(5000);
 }

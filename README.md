@@ -23,7 +23,18 @@ Every step is documented below, and the full source is here to read, copy, or mo
 - Reads temperature, humidity (AHT20) and barometric pressure (BMP280) over I2C
 - Shows a boot splash (shop logo + name) for 2 seconds, then a live readout: a large centered temperature as the headline reading, with humidity and pressure as smaller stats underneath
 - Mirrors every reading to Serial (115200 baud) each cycle
-- Prints a self-test line on boot (`OLED (SH1106): OK/NOT FOUND`, `AHT20: OK/NOT FOUND`, `BMP280: OK/NOT FOUND`) — this is the actual bench-test procedure used before dispatch, and it doubles as your first confirmation that everything is wired correctly
+- Runs a self-test on boot and prints the result to Serial — this is the actual bench-test procedure used before dispatch, and it doubles as your first confirmation that everything is wired correctly. Each part must not only be **found**, its first reading must also make sense (temperature −20 to 60 °C, humidity 0–100 %, pressure 870–1085 hPa), so a sensor that answers but gives garbage still fails:
+
+  ```
+  --- Self-test ---
+  OLED (SH1106): OK
+  AHT20:         OK (21.4 C, 48.2 %)
+  BMP280:        OK (1012.6 hPa)
+  WiFi AP:       OK          <- weather_station_ap only
+  RESULT:        PASS
+  ```
+
+  Each line reads `OK`, `NOT FOUND` (check the wiring/address) or `BAD READING` (the part answers but its data is wrong). If anything fails, the OLED also shows a **SELF-TEST FAILED** screen listing what failed, so you can spot a problem without a computer attached.
 
 There are **two sketches** in this repo:
 
@@ -113,10 +124,12 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 
 This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built into the ESP32 board package.
 
-1. Open `weather_station_ap/weather_station_ap.ino`. Change `AP_SSID` / `AP_PASSWORD` near the top if you want a different network name/password (password must be 8+ characters, or leave it `""` for an open network).
-2. Upload it. The OLED and Serial Monitor will show the network name, password, and a URL like `http://192.168.4.1`.
+1. Open `weather_station_ap/weather_station_ap.ino` and upload it. You don't need to change anything: by default every board creates its **own** network name (from its unique hardware address, e.g. `ElTech-WS-A3F2`) and its **own** random 8-character password, so two kits in the same room never clash and nobody can guess yours from this code. The password is made on first boot and saved in the board's flash memory, so it stays the same after reboots and re-uploads.
+2. The OLED (for 6 seconds after the splash screen) and Serial Monitor show the network name, password, and a URL like `http://192.168.4.1`. Missed it? Press the board's RESET button to see it again.
 3. On your phone or laptop, connect to that WiFi network, then open that URL in a browser.
 4. The page shows temperature/humidity/pressure and updates itself every 2 seconds — no need to refresh.
+
+**Want your own name/password instead?** Type them into `AP_SSID` / `AP_PASSWORD` near the top of the sketch (name up to 32 characters, password 8–63 characters), or set `AP_OPEN_NETWORK` to `true` for no password at all. **Want a fresh random password?** Set `Tools > Erase All Flash Before Sketch Upload` to **Enabled**, upload once, then set it back to Disabled. If the network can't start (e.g. your password is too short), the self-test reports `WiFi AP: FAILED` with the reason instead of showing a URL that won't work.
 
 This is a standalone Access Point, not connected to your home WiFi/the internet — it's meant for a local demo (e.g. showing the kit working at a table, or on a shared network with no internet needed). Range is the same as any small WiFi device, roughly a typical room.
 

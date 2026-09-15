@@ -18,13 +18,15 @@
 //
 // How to use:
 //   1. Flash this sketch.
-//   2. On your phone/laptop, connect to the WiFi network AP_SSID below.
+//   2. The OLED and Serial Monitor show this board's WiFi network name and
+//      password. Connect your phone/laptop to that network.
 //   3. Open a browser to http://192.168.4.1 (also shown on the OLED and Serial).
 //   4. The page updates every 2 seconds on its own — no need to refresh.
 // Full source, wiring diagram and setup guide: github.com/eltech-online/eltech-esp32-weather-station
 
 #include <WiFi.h>
 #include <WebServer.h>
+#include <Preferences.h>  // saves this board's generated WiFi password in flash
 #include <Wire.h>
 #include <Adafruit_AHTX0.h>
 #include <Adafruit_BMP280.h>
@@ -33,9 +35,17 @@
 #include "logo_bitmap.h"    // shop logo bitmap for the OLED splash screen
 #include "page_template.h"  // the web dashboard's HTML page (used by handleRoot() below)
 
-// ---- WiFi Access Point settings — change these if you like ----
-const char* AP_SSID     = "ElTech-WeatherStation";
-const char* AP_PASSWORD = "weather123";   // must be 8+ characters, or "" for an open network
+// ---- WiFi Access Point settings ----
+// Leave both empty ("") and every board gets its OWN network name, made from its
+// unique hardware (MAC) address, e.g. "ElTech-WS-A3F2", and its OWN random
+// 8-character password. The password is created on first boot and saved in
+// flash, so it stays the same after every reboot and re-flash. Both are shown on
+// the OLED and in Serial Monitor.
+// Or type your own in: the name can be up to 32 characters (only the first 21
+// fit on the OLED) and the password must be 8-63 characters.
+const char* AP_SSID     = "";
+const char* AP_PASSWORD = "";
+const bool  AP_OPEN_NETWORK = false;  // true = no password at all (anyone nearby can join)
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -55,7 +65,25 @@ WebServer server(80);
 
 bool ahtOK = false, bmpOK = false, oledOK = false;
 
+// Self-test ranges. A reading outside these almost always means a faulty or
+// badly wired sensor rather than the real weather, so the self-test fails it.
+const float TEMP_MIN_C   = -20.0, TEMP_MAX_C   = 60.0;
+const float HUM_MIN_PCT  =   0.0, HUM_MAX_PCT  = 100.0;
+const float PRES_MIN_HPA = 870.0, PRES_MAX_HPA = 1085.0;
+
+// Set by runSelfTest(): true only if the sensor was found AND its first
+// reading was inside the ranges above.
+bool ahtPassed = false, bmpPassed = false;
+
+// The network name/password actually in use (from the settings above, or
+// generated), and whether the Access Point started.
+String apSsid, apPassword;
+bool wifiOK = false;
+String wifiError;
+
 void centerText(const String& text, int y, int textSize);
+bool runSelfTest();
+void showSelfTestFailure();
 float g_temperature = NAN, g_humidity = NAN, g_pressure = NAN;
 
 void handleRoot() {
@@ -73,6 +101,65 @@ void handleData() {
   json += "}";
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate");
   server.send(200, "application/json", json);
+}
+
+// "ElTech-WS-" + the last 4 hex digits of this board's MAC address. Every ESP32
+// has a different MAC, so two kits in the same room never clash.
+String makeUniqueSsid() {
+  uint8_t mac[6];
+  WiFi.softAPmacAddress(mac);
+  char name[20];
+  snprintf(name, sizeof(name), "ElTech-WS-%02X%02X", mac[4], mac[5]);
+  return String(name);
+}
+
+// Loads this board's saved password, or creates and saves a random one on first
+// boot. Uses lowercase letters and digits only, minus look-alikes (i, l, o, 0, 1),
+// so it's easy to read off the OLED and type on a phone. To get a new one, set
+// Tools > "Erase All Flash Before Sketch Upload" to Enabled and upload once.
+String loadOrCreatePassword() {
+  Preferences prefs;
+  prefs.begin("weather", false);
+  String password = prefs.getString("ap_password", "");
+  if (password.length() < 8) {
+    const char alphabet[] = "abcdefghjkmnpqrstuvwxyz23456789";
+    password = "";
+    for (int i = 0; i < 8; i++) {
+      password += alphabet[esp_random() % (sizeof(alphabet) - 1)];
+    }
+    prefs.putString("ap_password", password);
+  }
+  prefs.end();
+  return password;
+}
+
+// Starts the Access Point and returns true if it worked. On failure, wifiError
+// says why — instead of silently printing a URL for a network that doesn't exist.
+bool startAccessPoint() {
+  // Turning WiFi on first also powers up the radio, which esp_random() uses as a
+  // source of true randomness for the generated password.
+  WiFi.mode(WIFI_AP);
+
+  apSsid = strlen(AP_SSID) ? String(AP_SSID) : makeUniqueSsid();
+  if (AP_OPEN_NETWORK) {
+    apPassword = "";
+  } else {
+    apPassword = strlen(AP_PASSWORD) ? String(AP_PASSWORD) : loadOrCreatePassword();
+  }
+
+  if (apSsid.length() > 32) {
+    wifiError = "name over 32 chars";
+    return false;
+  }
+  if (!AP_OPEN_NETWORK && (apPassword.length() < 8 || apPassword.length() > 63)) {
+    wifiError = "password not 8-63 chars";
+    return false;
+  }
+  if (!WiFi.softAP(apSsid.c_str(), AP_OPEN_NETWORK ? NULL : apPassword.c_str())) {
+    wifiError = "softAP() failed";
+    return false;
+  }
+  return true;
 }
 
 void setup() {
@@ -96,18 +183,22 @@ void setup() {
   Serial.println("           ElTech-Online");
   Serial.println("   ESP32 Weather Station (WiFi AP mode)");
   Serial.println("========================================");
-  Serial.println("--- Self-test ---");
-  Serial.print("OLED (SH1106): "); Serial.println(oledOK ? "OK" : "NOT FOUND");
-  Serial.print("AHT20:         "); Serial.println(ahtOK  ? "OK" : "NOT FOUND");
-  Serial.print("BMP280:        "); Serial.println(bmpOK  ? "OK" : "NOT FOUND");
 
-  // Start the Access Point.
-  WiFi.softAP(AP_SSID, AP_PASSWORD);
+  // Start the Access Point first, so the self-test can report whether it worked.
+  wifiOK = startAccessPoint();
   IPAddress ip = WiFi.softAPIP();
+
+  // Self-test: check this in Serial Monitor to confirm everything is wired right.
+  bool selfTestPassed = runSelfTest();
+
   Serial.println("--- WiFi Access Point ---");
-  Serial.print("SSID:     "); Serial.println(AP_SSID);
-  Serial.print("Password: "); Serial.println(strlen(AP_PASSWORD) ? AP_PASSWORD : "(open network)");
-  Serial.print("URL:      http://"); Serial.println(ip);
+  if (wifiOK) {
+    Serial.print("SSID:     "); Serial.println(apSsid);
+    Serial.print("Password: "); Serial.println(AP_OPEN_NETWORK ? "(open network)" : apPassword.c_str());
+    Serial.print("URL:      http://"); Serial.println(ip);
+  } else {
+    Serial.print("FAILED to start: "); Serial.println(wifiError);
+  }
 
   server.on("/", handleRoot);
   server.on("/data", handleData);
@@ -121,17 +212,21 @@ void setup() {
     display.display();
     delay(2000);
 
+    if (!selfTestPassed) showSelfTestFailure();
+
     // Show the WiFi connection details so a beginner knows how to reach the
     // dashboard — SSID and password both, since a beginner has no other way
     // to learn the password once the unit is sealed in its enclosure.
-    display.clearDisplay();
-    centerText("Connect to WiFi:", 0, 1);
-    centerText(AP_SSID, 12, 1);
-    centerText(strlen(AP_PASSWORD) ? "Pass: " + String(AP_PASSWORD) : "(open network)", 24, 1);
-    centerText("then open:", 36, 1);
-    centerText("http://" + ip.toString(), 48, 1);
-    display.display();
-    delay(6000);
+    if (wifiOK) {
+      display.clearDisplay();
+      centerText("Connect to WiFi:", 0, 1);
+      centerText(apSsid, 12, 1);
+      centerText(AP_OPEN_NETWORK ? String("(open network)") : "Pass: " + apPassword, 24, 1);
+      centerText("then open:", 36, 1);
+      centerText("http://" + ip.toString(), 48, 1);
+      display.display();
+      delay(6000);
+    }
   }
 }
 
@@ -197,4 +292,75 @@ void centerText(const String& text, int y, int textSize) {
   if (x < 0) x = 0;
   display.setCursor(x, y);
   display.print(text);
+}
+
+bool inRange(float value, float minValue, float maxValue) {
+  return !isnan(value) && value >= minValue && value <= maxValue;
+}
+
+// Checks each part is connected AND gives a believable first reading, prints
+// the result to Serial, and returns true only if everything passed. A sensor
+// that answers but reads e.g. 0 hPa or NaN is reported as BAD READING.
+bool runSelfTest() {
+  Serial.println("--- Self-test ---");
+  Serial.print("OLED (SH1106): "); Serial.println(oledOK ? "OK" : "NOT FOUND");
+
+  Serial.print("AHT20:         ");
+  if (!ahtOK) {
+    Serial.println("NOT FOUND");
+  } else {
+    sensors_event_t humidity, temp;
+    bool readOK = aht.getEvent(&humidity, &temp);
+    ahtPassed = readOK
+             && inRange(temp.temperature, TEMP_MIN_C, TEMP_MAX_C)
+             && inRange(humidity.relative_humidity, HUM_MIN_PCT, HUM_MAX_PCT);
+    if (readOK) {
+      Serial.printf("%s (%.1f C, %.1f %%)\n", ahtPassed ? "OK" : "BAD READING",
+                    temp.temperature, humidity.relative_humidity);
+    } else {
+      Serial.println("BAD READING (no data)");
+    }
+  }
+
+  Serial.print("BMP280:        ");
+  if (!bmpOK) {
+    Serial.println("NOT FOUND");
+  } else {
+    delay(100);  // give the BMP280 time to finish its first measurement after begin()
+    float pressureHpa = bmp.readPressure() / 100.0F;
+    bmpPassed = inRange(pressureHpa, PRES_MIN_HPA, PRES_MAX_HPA);
+    Serial.printf("%s (%.1f hPa)\n", bmpPassed ? "OK" : "BAD READING", pressureHpa);
+  }
+
+  Serial.print("WiFi AP:       ");
+  if (wifiOK) { Serial.println("OK"); } else { Serial.print("FAILED ("); Serial.print(wifiError); Serial.println(")"); }
+
+  bool passed = oledOK && ahtPassed && bmpPassed && wifiOK;
+  Serial.print("RESULT:        "); Serial.println(passed ? "PASS" : "FAIL");
+  return passed;
+}
+
+// Shown on the OLED only when the self-test fails, so a problem is visible even
+// without a computer attached. (If the OLED itself failed, only Serial shows it.)
+void showSelfTestFailure() {
+  display.clearDisplay();
+  centerText("SELF-TEST FAILED", 0, 1);
+  display.drawLine(0, 9, SCREEN_WIDTH, 9, SH110X_WHITE);
+  int y = 14;
+  if (!ahtPassed) {
+    display.setCursor(0, y); y += 10;
+    display.print(ahtOK ? "AHT20: bad reading" : "AHT20: not found");
+  }
+  if (!bmpPassed) {
+    display.setCursor(0, y); y += 10;
+    display.print(bmpOK ? "BMP280: bad reading" : "BMP280: not found");
+  }
+  if (!wifiOK) {
+    display.setCursor(0, y); y += 10;
+    display.print("WiFi: failed");
+  }
+  display.setCursor(0, 54);
+  display.print("See Serial Monitor");
+  display.display();
+  delay(5000);
 }
