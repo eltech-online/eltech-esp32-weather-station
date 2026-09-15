@@ -125,7 +125,7 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built into the ESP32 board package.
 
 1. Open `weather_station_ap/weather_station_ap.ino` and upload it. You don't need to change anything: by default every board creates its **own** network name (from its unique hardware address, e.g. `ElTech-WS-A3F2`) and its **own** random 8-character password, so two kits in the same room never clash and nobody can guess yours from this code. The password is made on first boot and saved in the board's flash memory, so it stays the same after reboots and re-uploads.
-2. The OLED (for 6 seconds after the splash screen) and Serial Monitor show the network name, password, and a URL like `http://192.168.4.1`. Missed it? Press the board's RESET button to see it again.
+2. The OLED and Serial Monitor show the network name, password, and a URL like `http://192.168.4.1`. On the OLED they appear full-screen for 6 seconds after the splash, then stay visible around the live readings (name and password at the top, URL at the bottom), so you never have to catch the boot screen.
 3. On your phone or laptop, connect to that WiFi network, then open that URL in a browser.
 4. The page shows temperature/humidity/pressure and updates itself every 2 seconds — no need to refresh.
 

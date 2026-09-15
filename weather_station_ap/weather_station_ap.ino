@@ -77,13 +77,14 @@ bool ahtPassed = false, bmpPassed = false;
 
 // The network name/password actually in use (from the settings above, or
 // generated), and whether the Access Point started.
-String apSsid, apPassword;
+String apSsid, apPassword, apUrl;
 bool wifiOK = false;
 String wifiError;
 
 void centerText(const String& text, int y, int textSize);
 bool runSelfTest();
 void showSelfTestFailure();
+void drawDataScreen();
 float g_temperature = NAN, g_humidity = NAN, g_pressure = NAN;
 
 void handleRoot() {
@@ -148,11 +149,11 @@ bool startAccessPoint() {
   }
 
   if (apSsid.length() > 32) {
-    wifiError = "name over 32 chars";
+    wifiError = "name over 32 chars";   // error texts fit one OLED line (21 chars)
     return false;
   }
   if (!AP_OPEN_NETWORK && (apPassword.length() < 8 || apPassword.length() > 63)) {
-    wifiError = "password not 8-63 chars";
+    wifiError = "pass not 8-63 chars";
     return false;
   }
   if (!WiFi.softAP(apSsid.c_str(), AP_OPEN_NETWORK ? NULL : apPassword.c_str())) {
@@ -177,6 +178,9 @@ void setup() {
   // "logo/lines show, but no text ever appears".
   if (oledOK) {
     display.setTextColor(SH110X_WHITE);
+    // Clip text that's too wide instead of wrapping it onto the next line, so a
+    // long custom WiFi name/password can't spill over the readings below it.
+    display.setTextWrap(false);
   }
 
   Serial.println("========================================");
@@ -187,6 +191,7 @@ void setup() {
   // Start the Access Point first, so the self-test can report whether it worked.
   wifiOK = startAccessPoint();
   IPAddress ip = WiFi.softAPIP();
+  apUrl = "http://" + ip.toString();
 
   // Self-test: check this in Serial Monitor to confirm everything is wired right.
   bool selfTestPassed = runSelfTest();
@@ -214,16 +219,16 @@ void setup() {
 
     if (!selfTestPassed) showSelfTestFailure();
 
-    // Show the WiFi connection details so a beginner knows how to reach the
-    // dashboard — SSID and password both, since a beginner has no other way
-    // to learn the password once the unit is sealed in its enclosure.
+    // Show the WiFi connection details full-screen once at boot. They also stay
+    // visible on the live data screen afterwards (see drawDataScreen()), since a
+    // beginner has no other way to learn the password once the unit is sealed.
     if (wifiOK) {
       display.clearDisplay();
       centerText("Connect to WiFi:", 0, 1);
       centerText(apSsid, 12, 1);
       centerText(AP_OPEN_NETWORK ? String("(open network)") : "Pass: " + apPassword, 24, 1);
       centerText("then open:", 36, 1);
-      centerText("http://" + ip.toString(), 48, 1);
+      centerText(apUrl, 48, 1);
       display.display();
       delay(6000);
     }
@@ -255,30 +260,51 @@ void loop() {
     Serial.print("  Pressure    : ");
     if (bmpOK) Serial.printf("%6.1f hPa\n", g_pressure); else Serial.println("  n/a");
 
-    if (oledOK) {
-      display.clearDisplay();
-      centerText("Weather Station", 0, 1);
-      display.drawLine(0, 9, SCREEN_WIDTH, 9, SH110X_WHITE);
-
-      String tempStr = ahtOK ? String(g_temperature, 1) + "C" : "n/a";
-      centerText(tempStr, 16, 3);
-
-      display.drawLine(0, 45, SCREEN_WIDTH, 45, SH110X_WHITE);
-
-      display.setTextSize(1);
-      display.setCursor(4, 52);
-      display.print("Hum ");
-      display.print(ahtOK ? String(g_humidity, 0) : "--");
-      display.print("%");
-
-      display.setCursor(70, 52);
-      display.print("P ");
-      display.print(bmpOK ? String(g_pressure, 0) : "--");
-      display.print("hPa");
-
-      display.display();
-    }
+    if (oledOK) drawDataScreen();
   }
+}
+
+// The live data screen. Same readings as the basic sketch, with the WiFi details
+// added so you can always see how to connect — no need to catch the boot screen:
+//
+//   y=0   WiFi: ElTech-WS-A3F2      <- network name
+//   y=9   Pass: abcd2345            <- password
+//   y=19     21.4C                  <- big headline temperature (text size 3)
+//   y=46  Hum 48%      P 1012hPa    <- humidity + pressure
+//   y=56  http://192.168.4.1        <- the address to open in your browser
+void drawDataScreen() {
+  display.clearDisplay();
+
+  if (wifiOK) {
+    String nameLine = "WiFi: " + apSsid;
+    centerText(nameLine.length() <= 21 ? nameLine : apSsid, 0, 1);
+    String passLine = AP_OPEN_NETWORK ? String("Open network") : "Pass: " + apPassword;
+    centerText(passLine.length() <= 21 ? passLine : apPassword, 9, 1);
+  } else {
+    centerText("WiFi FAILED", 0, 1);
+    centerText(wifiError, 9, 1);
+  }
+  display.drawLine(0, 17, SCREEN_WIDTH, 17, SH110X_WHITE);
+
+  String tempStr = ahtOK ? String(g_temperature, 1) + "C" : "n/a";
+  centerText(tempStr, 20, 3);
+
+  display.drawLine(0, 43, SCREEN_WIDTH, 43, SH110X_WHITE);
+
+  display.setTextSize(1);
+  display.setCursor(4, 46);
+  display.print("Hum ");
+  display.print(ahtOK ? String(g_humidity, 0) : "--");
+  display.print("%");
+
+  display.setCursor(70, 46);
+  display.print("P ");
+  display.print(bmpOK ? String(g_pressure, 0) : "--");
+  display.print("hPa");
+
+  if (wifiOK) centerText(apUrl, 56, 1);
+
+  display.display();
 }
 
 // Draws `text` horizontally centered on the display at the given y, for the given text size.
