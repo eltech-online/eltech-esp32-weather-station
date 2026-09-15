@@ -86,6 +86,22 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
    - Adafruit BMP280 Library
    - Adafruit SH110X
    - Adafruit GFX Library
+
+   If Library Manager asks to install dependencies (Adafruit BusIO, Adafruit Unified Sensor), click **Install all**.
+
+   **Tested with** these versions — if something doesn't compile or display correctly, installing these exact versions is the first thing to try (both Boards Manager and Library Manager let you pick a version from a dropdown):
+
+   | Package | Version |
+   |---|---|
+   | esp32 by Espressif Systems (board package) | 3.3.11 |
+   | Adafruit AHTX0 | 2.0.6 |
+   | Adafruit BMP280 Library | 3.0.0 |
+   | Adafruit SH110X | 2.1.15 |
+   | Adafruit GFX Library | 1.12.6 |
+   | Adafruit BusIO | 1.17.4 |
+   | Adafruit Unified Sensor | 1.1.15 |
+
+   (Confirmed on real hardware with an ESP32-C6 so far; re-confirmation on the ESP32-C3 is pending, same as the Tools settings above.)
 6. If you're unsure of your I2C pins/addresses, flash `i2c_scanner/i2c_scanner.ino` first and check Serial Monitor (115200 baud).
 7. Open `weather_station/weather_station.ino` (or `weather_station_ap/weather_station_ap.ino` for the WiFi version), adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
 
@@ -114,4 +130,4 @@ Or just delete the `drawBitmap(...)` line in `setup()` (in both sketches) and ke
 
 The code, documentation and wiring diagram are MIT-licensed — see [LICENSE](LICENSE). Use them, modify them, build your own kit with them.
 
-**The ElTech-Online name and logo are not covered by the MIT license.** The logo files (`logo.png`, `logo_preview.png`, and the bitmap in both `logo_bitmap.h` files) are © ElTech-Online, all rights reserved. If you build or sell your own version, swap in your own logo (see [Using your own logo instead](#using-your-own-logo-instead)) and don't present it as an ElTech-Online product.
+**The ElTech-Online name and logo are not covered by the MIT license.** The logo files (`logo.png` and the bitmap in both `logo_bitmap.h` files) are © ElTech-Online, all rights reserved. If you build or sell your own version, swap in your own logo (see [Using your own logo instead](#using-your-own-logo-instead)) and don't present it as an ElTech-Online product.
