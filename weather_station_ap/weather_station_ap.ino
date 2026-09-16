@@ -178,6 +178,10 @@ bool startAccessPoint() {
     wifiError = "softAP() failed";
     return false;
   }
+  // The ESP32-C3 SuperMini's tiny antenna can't handle full transmit power:
+  // the signal gets so distorted that phones can't see or join the network.
+  // Lowering it to 8.5 dBm fixes this and is still plenty for a room.
+  WiFi.setTxPower(WIFI_POWER_8_5dBm);
   return true;
 }
 

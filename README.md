@@ -154,7 +154,7 @@ This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built i
 
 **Want your own name/password instead?** Type them into `AP_SSID` / `AP_PASSWORD` near the top of the sketch (name up to 32 characters, password 8–63 characters), or set `AP_OPEN_NETWORK` to `true` for no password at all. **Want a fresh random password?** Set `Tools > Erase All Flash Before Sketch Upload` to **Enabled**, upload once, then set it back to Disabled. If the network can't start (e.g. your password is too short), the self-test reports `WiFi AP: FAILED` with the reason instead of showing a URL that won't work.
 
-This is a standalone Access Point, not connected to your home WiFi/the internet — it's meant for a local demo (e.g. showing the kit working at a table, or on a shared network with no internet needed). Range is the same as any small WiFi device, roughly a typical room.
+This is a standalone Access Point, not connected to your home WiFi/the internet — it's meant for a local demo (e.g. showing the kit working at a table, or on a shared network with no internet needed). The sketch lowers the WiFi transmit power to 8.5 dBm on purpose: on the ESP32-C3 SuperMini, full power distorts the signal so badly that phones can't see or join the network. Range is roughly a typical room.
 
 ## How the code works
 
@@ -186,7 +186,8 @@ This sketch does all of the above, plus:
 3. **The page updates itself.** The page itself is only loaded once. JavaScript at the bottom of `page_template.h` then calls `fetch('/data')` every 2 seconds and puts the new numbers into the page. Only the small JSON reply travels each time, not the whole page.
 4. **No `delay()` in `loop()`.** The web server has to keep answering browsers, via `server.handleClient()`, all the time. So instead of pausing, `loop()` checks the clock with `millis()` and only reads the sensors when 2 seconds have passed.
 5. **Why the page is in its own file.** The Arduino IDE quietly rewrites `.ino` files before compiling them, and it can corrupt a large block of text like a whole web page. Code in a separate `.h` file is left untouched, so the page lives in `page_template.h`.
-6. **A password per board.** `loadOrCreatePassword()` uses the ESP32's `Preferences` library to store the password in flash memory, which keeps its contents when the power is off.
+6. **Lower WiFi power.** Right after the network starts, `WiFi.setTxPower(WIFI_POWER_8_5dBm)` turns the radio down. The SuperMini's small antenna distorts the signal at full power, so a quieter, cleaner signal actually works better.
+7. **A password per board.** `loadOrCreatePassword()` uses the ESP32's `Preferences` library to store the password in flash memory, which keeps its contents when the power is off.
 
 ## Try this next
 
