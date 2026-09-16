@@ -16,7 +16,7 @@ This kit is designed to teach, not just work out of the box:
 - **Hosting your own WiFi dashboard** — turning the board into its own Access Point and serving a live-updating webpage, with no router or internet needed
 - **Verifying your own work** — the firmware prints a pass/fail self-test on boot, so you get immediate proof each part is wired correctly before moving on
 
-Every step is documented below, and the full source is here to read, copy, or modify.
+Every step is documented below, and the full source is here to read, copy, or modify. Once it's running, [How the code works](#how-the-code-works) walks through what each part of the code does, and [Try this next](#try-this-next) has small changes to make yourself.
 
 ## What it does
 
@@ -73,6 +73,8 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 
 ## Setup (Arduino IDE)
 
+**Before you start:** download and install the free **Arduino IDE 2** for Windows, macOS or Linux from [arduino.cc/en/software](https://www.arduino.cc/en/software), then open it. That's the only program you need. The ESP32-C3 connects over its own USB-C port, so there's no separate USB driver to install. Use a USB cable that carries data: some cheap cables only charge, and then the board never shows up.
+
 1. **Add the ESP32 board index**: `File > Preferences` → Additional Boards Manager URLs:
    ```
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
@@ -120,6 +122,27 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 6. If you're unsure of your I2C pins/addresses, flash `i2c_scanner/i2c_scanner.ino` first and check Serial Monitor (115200 baud).
 7. Open `weather_station/weather_station.ino` (or `weather_station_ap/weather_station_ap.ino` for the WiFi version), adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
 
+### Opening the Serial Monitor
+
+The self-test and the live readings are printed to the **Serial Monitor**, a text window inside the Arduino IDE:
+
+1. Open it with `Tools > Serial Monitor` (or `Ctrl+Shift+M` on Windows/Linux, `Cmd+Shift+M` on macOS). It opens at the bottom of the IDE window.
+2. Set the speed drop-down on the right-hand side to **115200 baud**. At the wrong speed, you'll see garbled characters or nothing at all.
+3. The self-test only runs once, right after the board starts. If you opened the Serial Monitor too late, press the board's **RST** (reset) button to run it again. If the window goes quiet after a reset, close and reopen the Serial Monitor.
+
+**Seeing nothing at all?** Check that `Tools > USB CDC On Boot` is set to **Enabled**. On the ESP32-C3, the Serial output only reaches the USB port with that setting. Without it, the upload still works, but the prints go to other pins and never reach your computer.
+
+### If the upload fails
+
+If the upload stops with an error like `Failed to connect` or `No serial data received`, or the port doesn't appear under `Tools > Port`, put the board into download mode by hand:
+
+1. Hold down the **BOOT** button on the board.
+2. While holding it, press and release **RST** (or unplug and re-plug the USB cable).
+3. Release **BOOT**. The board is now waiting for new code. Choose its port under `Tools > Port` (it may have changed) and click **Upload** again.
+4. When the upload finishes, press **RST** once to start the new code.
+
+You normally only need this the first time, or if a previous sketch crashed the USB connection.
+
 ## WiFi dashboard (`weather_station_ap`)
 
 This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built into the ESP32 board package.
@@ -132,6 +155,53 @@ This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built i
 **Want your own name/password instead?** Type them into `AP_SSID` / `AP_PASSWORD` near the top of the sketch (name up to 32 characters, password 8–63 characters), or set `AP_OPEN_NETWORK` to `true` for no password at all. **Want a fresh random password?** Set `Tools > Erase All Flash Before Sketch Upload` to **Enabled**, upload once, then set it back to Disabled. If the network can't start (e.g. your password is too short), the self-test reports `WiFi AP: FAILED` with the reason instead of showing a URL that won't work.
 
 This is a standalone Access Point, not connected to your home WiFi/the internet — it's meant for a local demo (e.g. showing the kit working at a table, or on a shared network with no internet needed). Range is the same as any small WiFi device, roughly a typical room.
+
+## How the code works
+
+Open `weather_station/weather_station.ino` alongside this section. Every Arduino sketch has two main functions: `setup()` runs once when the board starts, and `loop()` then runs over and over, forever.
+
+### The basic sketch (`weather_station`)
+
+1. **Settings at the top.** The `#define` lines name the I2C pins (`I2C_SDA`, `I2C_SCL`) and device addresses (`OLED_ADDR`, `BMP280_ADDR`), so they can be changed in one place.
+2. **Starting the I2C bus.** `Wire.begin(I2C_SDA, I2C_SCL)` tells the ESP32 which two pins carry the shared data (SDA) and clock (SCL) signals. All three devices listen on those same two wires, and each one answers only to its own address.
+3. **Starting each device.** `display.begin(...)`, `aht.begin()` and `bmp.begin(...)` each try to talk to one device and return `true` if it answered. The results are saved in `oledOK`, `ahtOK` and `bmpOK`, so the rest of the code can skip a missing part instead of crashing.
+4. **The self-test.** `runSelfTest()` takes one reading from each sensor and checks it's believable using `inRange()`. A sensor can answer on the bus and still be faulty, so being found isn't enough.
+5. **Reading the sensors** (in `loop()`):
+   - `aht.getEvent(&humidity, &temp)` fills in both temperature and humidity in one call.
+   - `bmp.readPressure()` returns pressure in pascals, so the code divides by 100 to get hPa, the unit weather forecasts use.
+6. **Drawing on the OLED.** Drawing happens in two stages:
+   - `clearDisplay()`, `print()` and `drawLine()` only change a copy of the screen kept in the ESP32's memory.
+   - Nothing appears until `display.display()` sends that copy to the screen in one go, which avoids flicker.
+   - `centerText()` works out where to start each line so it's centred: each character is 6 pixels wide at text size 1.
+7. **Waiting.** `delay(2000)` pauses for 2 seconds before `loop()` runs again.
+
+### The WiFi sketch (`weather_station_ap`)
+
+This sketch does all of the above, plus:
+
+1. **Creating a WiFi network.** `WiFi.mode(WIFI_AP)` and `WiFi.softAP(name, password)` turn the ESP32 into an *Access Point*: a small WiFi network of its own. The board always gives itself the address `192.168.4.1` on that network.
+2. **A tiny web server.** `WebServer server(80)` listens for browsers on port 80, the normal web port. Two addresses are set up with `server.on(...)`:
+   - `/` → `handleRoot()` sends the dashboard page. That page is stored in `page_template.h`.
+   - `/data` → `handleData()` sends just the current readings as **JSON**, a compact text format that programs can read easily, e.g. `{"temp":"21.4 °C","hum":"48.2 %","pres":"1013 hPa",...}`.
+3. **The page updates itself.** The page itself is only loaded once. JavaScript at the bottom of `page_template.h` then calls `fetch('/data')` every 2 seconds and puts the new numbers into the page. Only the small JSON reply travels each time, not the whole page.
+4. **No `delay()` in `loop()`.** The web server has to keep answering browsers, via `server.handleClient()`, all the time. So instead of pausing, `loop()` checks the clock with `millis()` and only reads the sensors when 2 seconds have passed.
+5. **Why the page is in its own file.** The Arduino IDE quietly rewrites `.ino` files before compiling them, and it can corrupt a large block of text like a whole web page. Code in a separate `.h` file is left untouched, so the page lives in `page_template.h`.
+6. **A password per board.** `loadOrCreatePassword()` uses the ESP32's `Preferences` library to store the password in flash memory, which keeps its contents when the power is off.
+
+## Try this next
+
+Small changes to try yourself, roughly easiest first. Change one thing, upload, and check the result before moving on. If something breaks, compare with the original file here on GitHub.
+
+1. **Show °F instead of °C.** In `loop()`, convert before displaying: `temperature * 9.0 / 5.0 + 32.0`. Change the `"C"` after the number to `"F"`.
+2. **Change how often it updates.** In the basic sketch, change `delay(2000)`. In the WiFi sketch, change the `2000` in `millis() - lastRead >= 2000`. The web page has its own timer too: `setInterval(refresh, 2000)` in `page_template.h`.
+3. **Estimate your altitude.** The BMP280 library can turn pressure into an approximate height: `bmp.readAltitude(1013.25)`. The number is the sea-level pressure in hPa; use today's value from a weather forecast for a better estimate. Print it to Serial first, then try fitting it on the OLED.
+4. **Track the highest and lowest temperature.** Add two variables above `setup()`, e.g. `float minTemp = 1000, maxTemp = -1000;`. In `loop()`, update them whenever a reading is lower or higher, then show them on the OLED or in Serial.
+5. **Add a comfort message.** Use an `if` on the humidity: for example, show `Dry` below 30 %, `Comfy` from 30–60 % and `Humid` above 60 %.
+6. **Add a new value to the web dashboard** (WiFi sketch). This change touches both the ESP32 code and the web page:
+   - In `handleData()`, add one more field to the JSON, e.g. your altitude as `"alt"`.
+   - In `page_template.h`, copy one of the `<div class="card">` blocks and give it a new `id`, e.g. `id="a"`.
+   - In `refresh()`, add a line like `document.getElementById('a').textContent = d.alt;`.
+7. **Connect another sensor.** For example, a capacitive soil moisture sensor gives an analog voltage. Wire its signal pin to a spare analog-capable pin (on the ESP32-C3, GPIO 0–4 can read analog; GPIO 3 is a safe choice) and read it with `analogRead(3)`. Show the raw number first, then work out the "dry" and "wet" values for your sensor by testing it in air and in water.
 
 ## Using your own logo instead
 
