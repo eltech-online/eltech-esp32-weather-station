@@ -67,7 +67,7 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
 
 **Pin numbers vary between SuperMini clone boards.** If your board doesn't respond on GPIO 8/9, use `i2c_scanner/i2c_scanner.ino` first — it sweeps several candidate pin pairs and reports which one finds your devices.
 
-> **Note:** GPIO 8/9 above are the ESP32-C3 SuperMini's own labeled I2C pins (see the wiring diagram). The firmware in this repo (`I2C_SDA`/`I2C_SCL` in both sketches) is **not updated yet** — it still has the values confirmed on the earlier ESP32-C6 build. It'll be updated to match once the C3 boards arrive and are bench-tested; until then, adjust `I2C_SDA`/`I2C_SCL` in the sketch to 8/9 yourself if you're wiring against this README.
+> **Note:** GPIO 8/9 are the ESP32-C3 SuperMini's own labeled I2C pins (see the wiring diagram), and both sketches use them by default (`I2C_SDA`/`I2C_SCL`). Confirmed on real hardware.
 
 ![Wiring diagram: ESP32-C3 SuperMini to AHT20+BMP280 sensor and OLED SH1106 display](wiring_diagram.png)
 
@@ -81,7 +81,7 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
    ```
 2. **Install the board package**: `Tools > Board > Boards Manager`, search "esp32", install **esp32 by Espressif Systems**.
 3. **Select the board**: `Tools > Board > esp32 > ESP32C3 Dev Module`.
-4. **Tools menu settings** below are carried over from this project's earlier ESP32-**C6** build and not yet re-confirmed on real C3 hardware — treat as a starting point, not a guarantee, until re-tested:
+4. **Tools menu settings** (confirmed on real ESP32-C3 SuperMini hardware):
 
    | Setting | Value |
    |---|---|
@@ -118,7 +118,7 @@ All three devices share one I2C bus — wire SDA together and SCL together (this
    | Adafruit BusIO | 1.17.4 |
    | Adafruit Unified Sensor | 1.1.15 |
 
-   (Confirmed on real hardware with an ESP32-C6 so far; re-confirmation on the ESP32-C3 is pending, same as the Tools settings above.)
+   (Confirmed on real ESP32-C3 SuperMini hardware.)
 6. If you're unsure of your I2C pins/addresses, flash `i2c_scanner/i2c_scanner.ino` first and check Serial Monitor (115200 baud).
 7. Open `weather_station/weather_station.ino` (or `weather_station_ap/weather_station_ap.ino` for the WiFi version), adjust `I2C_SDA`/`I2C_SCL`/`BMP280_ADDR`/`OLED_ADDR` at the top if your scan found different values, and upload.
 

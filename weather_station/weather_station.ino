@@ -24,11 +24,11 @@
 #define OLED_ADDR    0x3C   // common default; try 0x3D if blank
 #define BMP280_ADDR  0x77   // common default; some modules ship at 0x76
 
-// These pins were confirmed on an earlier ESP32-C6 build, not yet re-tested on
-// C3. If your sensors/display don't respond, run i2c_scanner.ino first to find
-// the right pins and addresses for your board, then update these.
-#define I2C_SDA 6
-#define I2C_SCL 7
+// GPIO 8/9 are the ESP32-C3 SuperMini's labeled I2C pins (confirmed on real
+// hardware). If your sensors/display don't respond, run i2c_scanner.ino first
+// to find the right pins and addresses for your board, then update these.
+#define I2C_SDA 8
+#define I2C_SCL 9
 
 Adafruit_AHTX0 aht;
 Adafruit_BMP280 bmp;

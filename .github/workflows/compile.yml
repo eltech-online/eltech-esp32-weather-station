@@ -17,8 +17,6 @@ jobs:
         board:
           - fqbn: esp32:esp32:esp32c3:CDCOnBoot=cdc
             name: ESP32-C3
-          - fqbn: esp32:esp32:esp32c6:CDCOnBoot=cdc
-            name: ESP32-C6
     name: ${{ matrix.board.name }}
     steps:
       - uses: actions/checkout@v4

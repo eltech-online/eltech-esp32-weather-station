@@ -18,16 +18,13 @@
 #include <Wire.h>
 
 // Common candidate pin pairs to try. {SDA, SCL}
-// Not every pair exists on every board — remove any pair your chip doesn't have.
-// On an ESP32-C3, remove {18, 19} (those are the C3's USB pins — scanning them
-// cuts the Serial Monitor connection mid-scan) and {22, 23} (no such GPIOs).
+// Only pins that exist on the ESP32-C3 are listed. Don't add GPIO 18/19 —
+// they are the C3's USB pins, and scanning them cuts the Serial Monitor connection.
 const int PIN_SETS[][2] = {
   {8, 9},    // the ESP32-C3 SuperMini's own labeled I2C pins
-  {6, 7},    // the pins this project's ESP32-C6 test build uses
+  {6, 7},
   {4, 5},
   {2, 3},
-  {18, 19},
-  {22, 23},
 };
 const int NUM_SETS = sizeof(PIN_SETS) / sizeof(PIN_SETS[0]);
 
