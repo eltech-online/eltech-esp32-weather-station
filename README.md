@@ -2,7 +2,7 @@
 
 [![Compile sketches](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml/badge.svg)](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml)
 
-A beginner-friendly **learning kit**: build a real weather station from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display, while picking up the core skills behind almost any IoT project — wiring I2C sensors, flashing Arduino firmware, and hosting a live WiFi dashboard from the board itself. No prior electronics or coding experience needed. This firmware ships pre-flashed and pre-tested on every [ElTech-Online](https://www.ebay.co.uk/usr/eltech-online) weather station kit (not yet listed) — but it's public so you can read it, learn from it, and build your own from scratch too.
+A beginner-friendly **learning kit**: build a real weather station from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display, while picking up the core skills behind almost any IoT project — wiring I2C sensors, flashing Arduino firmware, and hosting a live WiFi dashboard from the board itself. No prior electronics or coding experience needed. This firmware ships pre-flashed and pre-tested on every [ElTech-Online ESP32 Weather Station Learning Kit](https://www.ebay.co.uk/itm/237071662372) — but it's public so you can read it, learn from it, and build your own from scratch too.
 
 ![ElTech-Online logo](logo.png)
 
@@ -144,6 +144,10 @@ If the upload stops with an error like `Failed to connect` or `No serial data re
 You normally only need this the first time, or if a previous sketch crashed the USB connection.
 
 ## WiFi dashboard (`weather_station_ap`)
+
+![WiFi dashboard example — temperature, humidity and pressure cards, plus a self-test panel showing PASS](dashboard_screenshot.png)
+
+*Example render of the dashboard page (`page_template.h`) with representative values — connect to a real board's AP to see your own live readings.*
 
 This version needs no extra libraries — `WiFi.h` and `WebServer.h` are built into the ESP32 board package.
 
