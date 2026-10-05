@@ -1,6 +1,6 @@
 # ElTech-Online ESP32-C3 Weather Station
 
-[![Compile sketches](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml/badge.svg)](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml)
+[![Compile sketches](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml/badge.svg)](https://github.com/eltech-online/eltech-esp32-weather-station/actions/workflows/compile.yml) [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/eltech)
 
 A beginner-friendly **learning kit**: build a real weather station from an **ESP32-C3 SuperMini**, an **AHT20+BMP280** combo sensor (temperature/humidity/pressure), and a **1.3" OLED SH1106** display, while picking up the core skills behind almost any IoT project — wiring I2C sensors, flashing Arduino firmware, and hosting a live WiFi dashboard from the board itself. No prior electronics or coding experience needed. This firmware ships pre-flashed and pre-tested on every [ElTech-Online ESP32 Weather Station Learning Kit](https://www.ebay.co.uk/itm/237071662372) — but it's public so you can read it, learn from it, and build your own from scratch too.
 
